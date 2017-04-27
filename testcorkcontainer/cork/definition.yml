@@ -1,0 +1,56 @@
+version: 1
+# Each cork container
+# has the following
+#
+# stages
+#   - a default stage must be specified
+
+# Define the stages
+#
+# Each stage has a set of steps
+# 
+# Types of steps:
+#   * container 
+#       * Runs a container against the current working directory
+#   * command 
+#       * Calls a command from the CORK_DIR/commands directory
+#   * export 
+#       * Exports a variable at the end of this run. This can be output
+#         to stdout or if a cork-agent is running it will be used to
+#         chain multiple cork jobs together
+#   * stage
+#       * Calls another stage
+stages:
+  build:
+    - name: build_container
+      type: command
+      args:
+        command: build_container
+      outputs: 
+        - app_image
+
+    - name: some_container
+      type: container
+      args:
+        image: virtru/image
+
+  default:
+    - type: stage
+      args:
+        stage: build
+
+# Used when chaining cork containers
+tags:
+  - docker
+  - project-type:node-v4
+
+# Used to list volumes to mount. You can use {{ VAR_NAME }} with the following variables
+# 
+#  HOST_CACHE_DIR - The host's caching directory
+#  HOST_WORK_DIR - The working directory on the host
+#  WORK_DIR - The working directory on the container
+volumes:
+  names: # Declare named volumes to use
+    - node_modules_cache
+  mounts: # Use
+    - '{{ volumes "node_modules_cache" }}:{{ WORK_DIR }}/node_modules'
