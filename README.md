@@ -1,4 +1,4 @@
-# cork - The most reliable build tool every conceived (_... probably_)
+# cork - The most reliable build tool ever conceived (_... probably_)
 
 cork is a build tool for projects that utilizes containerization to achieve
 highly reliable and highly portable build workflows. cork is the tool you
