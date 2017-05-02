@@ -27,18 +27,6 @@ $ cork init [project-type]
 $ cork run
 ```
 
-### Export the steps as buildkite steps
-
-```
-$ cork export --as-buildkite-steps
-```
-
-### List the steps available to you
-
-```
-$ cork build
-```
-
 ### Run just the test stage
 
 ```
