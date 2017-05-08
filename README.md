@@ -13,7 +13,24 @@ local development machine.
 
 Dream no more. Cork is here.
 
-Cork is powered by docker and runs anywhere docker runs. If it works on Linux, it will work on Windows.
+Cork is powered by docker and runs anywhere docker runs. If it works on Linux,
+it will work on Windows and OS X. 
+
+## Quick start
+
+For the quick start, we will be creating a brand new node-v4 project.
+
+### Initialize a project
+
+```
+$ cork init virtru/node-v4-project:latest
+```
+
+### Build the project
+
+```
+$ cork run
+```
 
 ## Usage
 
