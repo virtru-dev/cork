@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/fatih/color"
 	"github.com/virtru/cork/server/definition"
 	"github.com/virtru/cork/server/streamer"
 )
@@ -23,6 +24,12 @@ func NewExecutor(corkDir string, renderer *definition.CorkTemplateRenderer, stre
 }
 
 func (se *StepsExecutor) ExecuteStep(step *definition.Step) error {
+	stepName := ""
+	if step.Name != "" {
+		stepName = fmt.Sprintf("\"%s\"", step.Name)
+	}
+	color.Green("\n>>> Executing %s step %s\n", step.Type, stepName)
+
 	// Resolve the arguments for the current step
 	handler, ok := StepHandlers[step.Type]
 	if !ok {
@@ -30,6 +37,7 @@ func (se *StepsExecutor) ExecuteStep(step *definition.Step) error {
 	}
 	outputs, err := handler(se.CorkDir, se, se.Stream, step)
 	if err != nil {
+		color.Red("\n>>> Failed while executing %s step %s\n", step.Type, stepName)
 		return err
 	}
 

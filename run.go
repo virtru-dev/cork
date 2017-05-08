@@ -14,6 +14,7 @@ import (
 	docker "github.com/fsouza/go-dockerclient"
 	"github.com/satori/go.uuid"
 
+	"github.com/fatih/color"
 	"gopkg.in/urfave/cli.v1"
 	"gopkg.in/yaml.v2"
 )
@@ -22,6 +23,18 @@ import (
 type CorkDefinition struct {
 	Name string `yaml:"name,omitempty"`
 	Type string `yaml:"type"`
+}
+
+func (cd *CorkDefinition) LoadName() error {
+	// If no project name is defined use the base directory name
+	if cd.Name == "" {
+		dir, err := os.Getwd()
+		if err != nil {
+			return err
+		}
+		cd.Name = path.Base(dir)
+	}
+	return nil
 }
 
 // CorkProjectMetadata - used to store metadata about the current project
@@ -38,6 +51,13 @@ func init() {
 		Name:        "run",
 		Description: "Determine available commands",
 		Action:      cmdRun,
+		Flags: []cli.Flag{
+			cli.BoolFlag{
+				Name:   "force-pull-image",
+				Usage:  "Forces cork to pull the latest version of the cork container",
+				EnvVar: "CORK_FORCE_PULL_IMAGE",
+			},
+		},
 	}
 	registerCommand(command)
 }
@@ -64,13 +84,9 @@ func loadCorkYaml() (*CorkDefinition, error) {
 		return nil, fmt.Errorf("cork.yml has no type defined. Cannot continue")
 	}
 
-	// If no project name is defined use the base directory name
-	if corkDef.Name == "" {
-		dir, err := os.Getwd()
-		if err != nil {
-			return nil, err
-		}
-		corkDef.Name = path.Base(dir)
+	err = corkDef.LoadName()
+	if err != nil {
+		return nil, err
 	}
 
 	return &corkDef, nil
@@ -172,15 +188,9 @@ func loadCorkProjectMetadata() (*CorkProjectMetadata, error) {
 	return &metadata, nil
 }
 
-func cmdRun(c *cli.Context) error {
+func executeCorkRun(c *cli.Context, corkDef *CorkDefinition, stageName string) error {
 	control := NewControl()
 	control.HandleTerminate()
-
-	log.Debug("Loading cork.yml")
-	corkDef, err := loadCorkYaml()
-	if err != nil {
-		return err
-	}
 
 	log.Debugf("Loading cork metadata for project %s", corkDef.Name)
 	metadata, err := loadCorkProjectMetadata()
@@ -194,8 +204,57 @@ func cmdRun(c *cli.Context) error {
 		return err
 	}
 
+	options := CorkTypeContainerOptions{
+		ProjectName:     corkDef.Name,
+		CacheVolumeName: metadata.CacheVolumeName(),
+		ImageName:       corkDef.Type,
+		Debug:           c.GlobalBool("debug"),
+		ForcePullImage:  c.Bool("force-pull-image"),
+	}
+
 	log.Debug("Initializing runner")
-	runner, err := New(corkDef.Name, client, corkDef.Type, metadata.CacheVolumeName(), control)
+	runner, err := New(client, control, options)
+	if err != nil {
+		return err
+	}
+
+	blue := color.New(color.FgBlue)
+	black := color.New(color.FgBlack)
+
+	fmt.Printf("Cork - The most reliable build tool ever conceived! (... probably)\n\n")
+
+	blue.Printf("Cork Is Running\n")
+	blue.Printf("-------------------\n")
+	blue.Printf("Project: ")
+	black.Printf("%s\n", corkDef.Name)
+	blue.Printf("Project Type: ")
+	black.Printf("%s\n", corkDef.Type)
+	blue.Printf("Executing Stage: ")
+	black.Printf("%s\n", stageName)
+	blue.Printf("-------------------\n")
+
+	err = runner.Start(stageName)
+	if control.Terminating {
+		color.Red("\nCork run terminated")
+	}
+	if err != nil {
+		if !(strings.Contains(err.Error(), "without exit status") && control.Terminating) {
+			color.Red("\nCork failed")
+			if strings.Contains(err.Error(), "InitializationError") {
+				color.Red("\nFailed to initialize the cork server.")
+				color.Red("You probably have a broken startup hook")
+			}
+			log.Errorf("%v", err)
+			os.Exit(1)
+		}
+	}
+	color.Green("\nCork is done!")
+	return nil
+}
+
+func cmdRun(c *cli.Context) error {
+	log.Debug("Loading cork.yml")
+	corkDef, err := loadCorkYaml()
 	if err != nil {
 		return err
 	}
@@ -205,11 +264,9 @@ func cmdRun(c *cli.Context) error {
 		stageName = "default"
 	}
 
-	err = runner.Start(stageName)
+	err = executeCorkRun(c, corkDef, stageName)
 	if err != nil {
-		if !(strings.Contains(err.Error(), "without exit status") && control.Terminating) {
-			return err
-		}
+		return err
 	}
 	return nil
 }

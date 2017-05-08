@@ -13,6 +13,8 @@ local development machine.
 
 Dream no more. Cork is here.
 
+Cork is powered by docker and runs anywhere docker runs. If it works on Linux, it will work on Windows.
+
 ## Usage
 
 ### Initialize a project

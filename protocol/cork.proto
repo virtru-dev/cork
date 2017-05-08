@@ -19,17 +19,20 @@ service CorkTypeService {
     // Kills the cork server
     rpc Kill(KillRequest) returns (Response) {};
 
-    // Gets the configuration of volumes to mount for this cork server
-    rpc VolumesToMountGet(VolumesToMountGetRequest) returns (Response) {};
-
     // Executes a specific stage
     rpc StageExecute(StageExecuteRequest) returns (stream ExecuteEvent) {};
 
     // React to an event
     rpc EventReact(EventReactRequest) returns (Response) {};
+
+    // Initialize a project
+    //rpc Initialize(InitializeRequest) returns (stream ExecuteEvent) {};
 }
 
 message KillRequest {
+}
+
+message InitializeRequest {
 }
 
 message StatusRequest {
@@ -74,9 +77,6 @@ message Step {
 
 message StepListResponse {
     repeated Step step = 1;
-}
-
-message VolumesToMountGetRequest {
 }
 
 message VolumesToMountGetResponse {

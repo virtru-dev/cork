@@ -62,7 +62,7 @@ func CommandStepHandler(corkDir string, executor *StepsExecutor, stream streamer
 
 	log.Debugf("Env for %s: %v", step.Name, cmd.Env)
 
-	stepStreamer.Run(cmd)
+	err = stepStreamer.Run(cmd)
 	if err != nil {
 		log.Debugf("Command %s encountered an error: %v", args.Command, err)
 		return nil, err

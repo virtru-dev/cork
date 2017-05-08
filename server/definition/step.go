@@ -51,7 +51,7 @@ func (sa *StepArgs) ResolveArgs(renderer *CorkTemplateRenderer) (*StepArgs, erro
 		return nil, err
 	}
 
-	var params map[string]string
+	params := make(map[string]string)
 	for key, value := range sa.Params {
 		resolvedValue, err := renderer.Render(value)
 		if err != nil {

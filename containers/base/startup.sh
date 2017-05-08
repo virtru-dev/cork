@@ -28,10 +28,4 @@ ssh-keyscan -t rsa github.com >> /root/.ssh/known_hosts
 
 /cork-server save-env
 
-STARTUP_PATH=/cork/hooks/startup
-
-if [[ -x $STARTUP_PATH ]]; then
-    $STARTUP_PATH
-fi
-
 /usr/sbin/sshd -D

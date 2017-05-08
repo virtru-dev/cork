@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net"
 	"os"
 	"os/exec"
@@ -10,7 +9,6 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/grpclog"
 
 	log "github.com/Sirupsen/logrus"
 	pb "github.com/virtru/cork/protocol"
@@ -18,6 +16,7 @@ import (
 	"github.com/virtru/cork/server/environment"
 	"github.com/virtru/cork/server/executor"
 	"golang.org/x/net/context"
+	"google.golang.org/grpc/codes"
 	"gopkg.in/urfave/cli.v1"
 )
 
@@ -26,31 +25,18 @@ var Commands []cli.Command
 
 // CorkTypeServer - Runs cork type tasks
 type CorkTypeServer struct {
-	ServerDefinition *definition.ServerDefinition
-	CorkDir          string
-	WorkDir          string
-	HostWorkDir      string
-	CacheDir         string
-	ProjectName      string
+	ServerDefinition    *definition.ServerDefinition
+	CorkDir             string
+	WorkDir             string
+	HostWorkDir         string
+	CacheDir            string
+	ProjectName         string
+	IsInitialized       bool
+	InitializationError error
 }
 
 type ServerStream interface {
 	Send(event *pb.ExecuteEvent) error
-}
-
-func (c *CorkTypeServer) VolumesToMountGet(ctx context.Context, req *pb.VolumesToMountGetRequest) (*pb.Response, error) {
-	typeDefRes := pb.Response_Volumes{
-		Volumes: &pb.VolumesToMountGetResponse{
-			Volumes: []string{
-				"{{ WORK_DIR }}/node_modules",
-			},
-		},
-	}
-	res := pb.Response{
-		Status: 200,
-		Res:    &typeDefRes,
-	}
-	return &res, nil
 }
 
 func (c *CorkTypeServer) Kill(ctx context.Context, req *pb.KillRequest) (*pb.Response, error) {
@@ -69,6 +55,9 @@ func (c *CorkTypeServer) Kill(ctx context.Context, req *pb.KillRequest) (*pb.Res
 }
 
 func (c *CorkTypeServer) Status(ctx context.Context, req *pb.StatusRequest) (*pb.Response, error) {
+	if err := c.CheckInitialization(); err != nil {
+		return nil, err
+	}
 	log.Debug("Got a status request")
 	res := pb.Response{
 		Status: 200,
@@ -80,6 +69,9 @@ func (c *CorkTypeServer) Status(ctx context.Context, req *pb.StatusRequest) (*pb
 }
 
 func (c *CorkTypeServer) StageExecute(req *pb.StageExecuteRequest, stream pb.CorkTypeService_StageExecuteServer) error {
+	if err := c.CheckInitialization(); err != nil {
+		return err
+	}
 	stage := req.GetStage()
 	log.Debugf("Executing stage: %s", stage)
 	steps, err := c.ServerDefinition.ListSteps(stage)
@@ -111,6 +103,43 @@ func (c *CorkTypeServer) createTemplateRenderer() *definition.CorkTemplateRender
 
 func (c *CorkTypeServer) EventReact(ctx context.Context, req *pb.EventReactRequest) (*pb.Response, error) {
 	return nil, nil
+}
+
+func (c *CorkTypeServer) Initialize() {
+	log.Debug("Initializing cork-server")
+
+	startupHookPath := path.Join(c.CorkDir, "hooks/startup")
+	err := executor.CheckCommandPath("startup hook", startupHookPath, 0)
+	if err != nil {
+		c.IsInitialized = true
+		log.Debugf("No valid startup hook found: %+v", err)
+		return
+	}
+
+	cmd := exec.Command(startupHookPath)
+	cmd.Env = os.Environ()
+
+	log.Debug("Executing startup hook")
+	err = cmd.Run()
+	if err != nil {
+		c.IsInitialized = false
+		c.InitializationError = err
+		log.Debugf("Error executing startup hook: %+v", err)
+		return
+	}
+	c.IsInitialized = true
+	log.Debug("Executed startup hook successfully")
+}
+
+func (c *CorkTypeServer) CheckInitialization() error {
+	if !c.IsInitialized {
+		errorStr := ""
+		if c.InitializationError != nil {
+			errorStr = fmt.Sprintf(": %+v", c.InitializationError)
+		}
+		return grpc.Errorf(codes.Internal, "InitializationError: An error occured initializing the cork-server%s", errorStr)
+	}
+	return nil
 }
 
 /*
@@ -147,7 +176,7 @@ func (c *CorkTypeServer) StepExecuteAll(req *pb.StepExecuteAllRequest, stream pb
 
 func newServer(c *cli.Context) (*CorkTypeServer, error) {
 	corkDir := c.String("dir")
-	s := CorkTypeServer{
+	server := CorkTypeServer{
 		CorkDir:     corkDir,
 		WorkDir:     c.String("work-dir"),
 		HostWorkDir: c.String("host-work-dir"),
@@ -158,8 +187,8 @@ func newServer(c *cli.Context) (*CorkTypeServer, error) {
 	if err != nil {
 		return nil, err
 	}
-	s.ServerDefinition = serverDef
-	return &s, nil
+	server.ServerDefinition = serverDef
+	return &server, nil
 }
 
 func setupApp() *cli.App {
@@ -180,35 +209,12 @@ func setupApp() *cli.App {
 		},
 	}
 
-	app.Before = func(c *cli.Context) error {
-		grpclog.SetLogger(log.StandardLogger())
-		if c.Bool("debug") {
-			log.SetLevel(log.DebugLevel)
-			log.Debug("Debug on")
-			os.Setenv("CORK_DEBUG", "true")
-		} else {
-			log.SetOutput(ioutil.Discard)
-		}
-		return nil
-	}
-
 	app.Commands = Commands
 	return app
 }
 
 func registerCommand(cmd cli.Command) {
 	Commands = append(Commands, cmd)
-}
-
-func runStartupHook(corkDir string) error {
-	startupHookPath := path.Join(corkDir, "hooks/startup")
-	err := executor.CheckCommandPath("startup hook", startupHookPath, 0)
-	if err != nil {
-		return err
-	}
-	cmd := exec.Command(startupHookPath)
-	cmd.Env = os.Environ()
-	return nil
 }
 
 func main() {
@@ -233,7 +239,8 @@ func main() {
 	app.Before = func(c *cli.Context) error {
 		if c.Bool("debug") {
 			log.SetLevel(log.DebugLevel)
-			log.Debug("Debug on")
+			log.Debug("Cork-server debug is on")
+			os.Setenv("CORK_DEBUG", "true")
 			err := os.Setenv("CORK_DEBUG", "true")
 			if err != nil {
 				return err
@@ -320,6 +327,7 @@ func cmdServe(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	corkTypeServer.Initialize()
 
 	log.Debugf("Starting cork-server at %d", port)
 	grpcServer := grpc.NewServer()
