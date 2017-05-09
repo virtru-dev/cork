@@ -12,6 +12,8 @@ import (
 // Commands
 var Commands []cli.Command
 
+const Version = "0.1.0"
+
 func setupApp() *cli.App {
 	app := cli.NewApp()
 
@@ -29,6 +31,7 @@ func setupApp() *cli.App {
 			Usage: "Set debug",
 		},
 	}
+	app.Version = Version
 
 	app.Before = func(c *cli.Context) error {
 		grpclog.SetLogger(log.StandardLogger())
