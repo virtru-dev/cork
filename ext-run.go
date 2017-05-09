@@ -17,6 +17,11 @@ func init() {
 				Usage:  "Forces cork to pull the latest version of the cork container",
 				EnvVar: "CORK_FORCE_PULL_IMAGE",
 			},
+			cli.StringFlag{
+				Name:   "ssh-key",
+				Usage:  "The ssh key path to use",
+				EnvVar: "CORK_SSH_KEY",
+			},
 		},
 	}
 	registerCommand(command)

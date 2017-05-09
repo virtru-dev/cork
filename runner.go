@@ -41,6 +41,7 @@ type CorkTypeContainer struct {
 	ProjectName     string
 	ForcePullImage  bool
 	Debug           bool
+	SSHKeyPath      string
 	Commander       *dockerutils.DockerCommander
 }
 
@@ -50,6 +51,7 @@ type CorkTypeContainerOptions struct {
 	CacheVolumeName string
 	ProjectName     string
 	ForcePullImage  bool
+	SSHKeyPath      string
 }
 
 // Creates a new cork runner
@@ -81,6 +83,7 @@ func New(dockerClient *docker.Client, control *Control, options CorkTypeContaine
 		ProjectName:     options.ProjectName,
 		ForcePullImage:  options.ForcePullImage,
 		Debug:           options.Debug,
+		SSHKeyPath:      options.SSHKeyPath,
 	}
 	return &runner, nil
 }
@@ -179,7 +182,17 @@ func (c *CorkTypeContainer) startSSHCommand(stageName string) error {
 		debugFlag = "--debug"
 	}
 	serverCommand := fmt.Sprintf(serverCommandTemplate, debugFlag)
-	command := NewDockerSSHCommand("127.0.0.1", c.SSHPort, serverCommand, failed)
+	sshCommandOptions := DockerSSHCommandOptions{
+		Host:       "127.0.0.1",
+		Port:       c.SSHPort,
+		Command:    serverCommand,
+		Failed:     failed,
+		SSHKeyPath: c.SSHKeyPath,
+	}
+	command, err := NewDockerSSHCommand(sshCommandOptions)
+	if err != nil {
+		return err
+	}
 
 	log.Debugf("Running SSH with env %v", c.Env)
 	command.Start(c.Env)
@@ -225,6 +238,7 @@ func (c *CorkTypeContainer) createCommander() (*dockerutils.DockerCommander, err
 		"CORK_CACHE_DIR",
 		"CORK_HOST_WORK_DIR",
 		"CORK_PROJECT_NAME",
+		"CORK_HOST_HOME_DIR",
 	}
 
 	options := dockerutils.DockerCommanderOptions{
@@ -235,6 +249,7 @@ func (c *CorkTypeContainer) createCommander() (*dockerutils.DockerCommander, err
 			"CORK_PORT=11900",
 			"CORK_WORK_DIR=/work",
 			"CORK_CACHE_DIR=/cork-cache",
+			"CORK_HOST_HOME_DIR=/host_home",
 			fmt.Sprintf("CORK_HOST_WORK_DIR=%s", pwd),
 			fmt.Sprintf("CORK_PROJECT_NAME=%s", c.ProjectName),
 		},
@@ -245,7 +260,7 @@ func (c *CorkTypeContainer) createCommander() (*dockerutils.DockerCommander, err
 		Binds: []string{
 			fmt.Sprintf("%s:/var/run/docker.sock", c.DockerHostPath),
 			fmt.Sprintf("%s:/work", pwd),
-			fmt.Sprintf("%s:/source_root", homeDir),
+			fmt.Sprintf("%s:/host_home", homeDir),
 			fmt.Sprintf("%s:/cork-cache", c.CacheVolumeName),
 		},
 		Privileged: true,
@@ -260,7 +275,6 @@ func (c *CorkTypeContainer) createCommander() (*dockerutils.DockerCommander, err
 	}
 
 	if c.Debug {
-		fmt.Println("DEBUg???")
 		options.Env = append(options.Env, "CORK_DEBUG=true")
 		setCorkVars = append(setCorkVars, "CORK_DEBUG")
 	}

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"os/user"
+	"path"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -17,24 +19,51 @@ import (
 var maxRetries = 15
 
 type DockerSSHCommand struct {
-	Host    string
-	Port    int
-	Command string
-	Failed  chan bool
-	Stdin   io.Reader
-	Stdout  io.Writer
-	Stderr  io.Writer
+	Host       string
+	Port       int
+	Command    string
+	Failed     chan bool
+	SSHKeyPath string
+	Stdin      io.Reader
+	Stdout     io.Writer
+	Stderr     io.Writer
 }
 
-func NewDockerSSHCommand(host string, port int, command string, failed chan bool) *DockerSSHCommand {
-	return &DockerSSHCommand{
-		Host:    host,
-		Port:    port,
-		Command: command,
-		Failed:  failed,
-		Stdout:  os.Stdout,
-		Stderr:  os.Stderr,
+type DockerSSHCommandOptions struct {
+	Failed     chan bool
+	Command    string
+	Host       string
+	Port       int
+	SSHKeyPath string
+}
+
+const DefaultSSHPath = ".ssh/id_rsa"
+
+func NewDockerSSHCommand(options DockerSSHCommandOptions) (*DockerSSHCommand, error) {
+	// FIXME: We should have an SSH Search Path
+	if options.SSHKeyPath == "" {
+		usr, err := user.Current()
+		if err != nil {
+			return nil, err
+		}
+		options.SSHKeyPath = path.Join(usr.HomeDir, DefaultSSHPath)
 	}
+
+	sshCommand := &DockerSSHCommand{
+		Host:       options.Host,
+		Port:       options.Port,
+		Command:    options.Command,
+		Failed:     options.Failed,
+		Stdout:     os.Stdout,
+		Stderr:     os.Stderr,
+		SSHKeyPath: options.SSHKeyPath,
+	}
+
+	err := sshCommand.PerformSelfTest()
+	if err != nil {
+		return nil, err
+	}
+	return sshCommand, nil
 }
 
 func (d *DockerSSHCommand) Start(envVars []string) {
@@ -49,9 +78,15 @@ func (d *DockerSSHCommand) Start(envVars []string) {
 }
 
 func (d *DockerSSHCommand) connect() (*ssh.Client, error) {
+	var err error
+	authMethod, err := d.getAuthMethod()
+	if err != nil {
+		return nil, err
+	}
+
 	config := &ssh.ClientConfig{
 		User: "root",
-		Auth: []ssh.AuthMethod{d.getAuthMethod()},
+		Auth: []ssh.AuthMethod{authMethod},
 		HostKeyCallback: func(hostname string, remote net.Addr, key ssh.PublicKey) error {
 			return nil
 		},
@@ -59,7 +94,6 @@ func (d *DockerSSHCommand) connect() (*ssh.Client, error) {
 	hostStr := fmt.Sprintf("%s:%d", d.Host, d.Port)
 
 	log.Debugf("Connecting to host: %s", hostStr)
-	var err error
 	for i := 0; i < maxRetries; i++ {
 		connection, err := ssh.Dial("tcp", hostStr, config)
 		if err == nil {
@@ -161,9 +195,39 @@ func (d *DockerSSHCommand) runCommand(envVars []string) error {
 	return session.Run(d.Command)
 }
 
-func (d *DockerSSHCommand) getAuthMethod() ssh.AuthMethod {
-	if sshAgent, err := net.Dial("unix", os.Getenv("SSH_AUTH_SOCK")); err == nil {
-		return ssh.PublicKeysCallback(agent.NewClient(sshAgent).Signers)
+// PerformSelfTest determines if the DockerSSHCommand can run
+func (d *DockerSSHCommand) PerformSelfTest() error {
+	sshAgent, err := net.Dial("unix", os.Getenv("SSH_AUTH_SOCK"))
+	if err != nil {
+		return err
 	}
+	defer sshAgent.Close()
+
+	agentClient := agent.NewClient(sshAgent)
+	agentKeys, err := agentClient.List()
+	if err != nil {
+		return err
+	}
+
+	found := false
+	for _, key := range agentKeys {
+		if key.Comment == d.SSHKeyPath {
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		return fmt.Errorf("CannotRunSSHCommand: Could not find appropriate key")
+	}
+
 	return nil
+}
+
+func (d *DockerSSHCommand) getAuthMethod() (ssh.AuthMethod, error) {
+	sshAgent, err := net.Dial("unix", os.Getenv("SSH_AUTH_SOCK"))
+	if err != nil {
+		return nil, err
+	}
+	return ssh.PublicKeysCallback(agent.NewClient(sshAgent).Signers), err
 }

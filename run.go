@@ -57,6 +57,11 @@ func init() {
 				Usage:  "Forces cork to pull the latest version of the cork container",
 				EnvVar: "CORK_FORCE_PULL_IMAGE",
 			},
+			cli.StringFlag{
+				Name:   "ssh-key",
+				Usage:  "The ssh key path to use",
+				EnvVar: "CORK_SSH_KEY",
+			},
 		},
 	}
 	registerCommand(command)
@@ -210,6 +215,7 @@ func executeCorkRun(c *cli.Context, corkDef *CorkDefinition, stageName string) e
 		ImageName:       corkDef.Type,
 		Debug:           c.GlobalBool("debug"),
 		ForcePullImage:  c.Bool("force-pull-image"),
+		SSHKeyPath:      c.String("ssh-key"),
 	}
 
 	log.Debug("Initializing runner")
@@ -240,9 +246,25 @@ func executeCorkRun(c *cli.Context, corkDef *CorkDefinition, stageName string) e
 	if err != nil {
 		if !(strings.Contains(err.Error(), "without exit status") && control.Terminating) {
 			color.Red("\nCork failed")
+
 			if strings.Contains(err.Error(), "InitializationError") {
-				color.Red("\nFailed to initialize the cork server.")
-				color.Red("You probably have a broken startup hook")
+				fmt.Println("")
+				fmt.Println("")
+				color.Red("======== ERROR HELP ========")
+				color.Red("Failed to initialize the cork server.")
+				fmt.Println("")
+				color.Red("The detected error usually relates to a broken startup hook. Try setting `cork --debug`")
+				color.Red("for more information.")
+			}
+
+			if strings.Contains(err.Error(), "CannotRunSSHCommand") {
+				fmt.Println("")
+				fmt.Println("")
+				color.Red("======== ERROR HELP ========")
+				color.Red("Failed to connect to the cork server.")
+				fmt.Println("")
+				color.Red("This is done through ssh and, for now, requires an ssh agent to be configured")
+				color.Red("with the appropriate key. Try setting `cork --debug` for more information.")
 			}
 			log.Errorf("%v", err)
 			os.Exit(1)
