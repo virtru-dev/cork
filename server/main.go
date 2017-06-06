@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"net"
 	"os"
 	"os/exec"
@@ -36,7 +37,7 @@ type CorkTypeServer struct {
 }
 
 type ServerStream interface {
-	Send(event *pb.ExecuteEvent) error
+	Send(event *pb.ExecuteOutputEvent) error
 }
 
 func (c *CorkTypeServer) Kill(ctx context.Context, req *pb.KillRequest) (*pb.Response, error) {
@@ -68,36 +69,93 @@ func (c *CorkTypeServer) Status(ctx context.Context, req *pb.StatusRequest) (*pb
 	return &res, nil
 }
 
-func (c *CorkTypeServer) StageExecute(req *pb.StageExecuteRequest, stream pb.CorkTypeService_StageExecuteServer) error {
+func (c *CorkTypeServer) StageExecute(stream pb.CorkTypeService_StageExecuteServer) error {
 	if err := c.CheckInitialization(); err != nil {
 		return err
 	}
-	stage := req.GetStage()
-	log.Debugf("Executing stage: %s", stage)
+	inputEvent, err := stream.Recv()
+	if err != nil {
+		if err == io.EOF {
+			return fmt.Errorf("Fatal error. Never started execution")
+		}
+		return err
+	}
+	if inputEvent.GetType() != "stageExecuteRequest" {
+		return fmt.Errorf("Fatal error. Expected stage execution request before anything else")
+	}
+	stageExecuteRequest := inputEvent.GetBody().(*pb.ExecuteInputEvent_StageExecuteRequest)
+	stage := stageExecuteRequest.StageExecuteRequest.GetStage()
+
+	requiredParams, err := c.ServerDefinition.RequiredUserParamsForStage(stage)
+	if err != nil {
+		return err
+	}
+	paramDefinitions := make(map[string]*pb.ParamDefinition)
+	for _, paramName := range requiredParams {
+		variableDefinition, ok := c.ServerDefinition.Params[paramName]
+		if !ok {
+			return fmt.Errorf(`Fatal error. Param definition could not be found for "%s"`, paramName)
+		}
+
+		varDefault := ""
+		if variableDefinition.Default != nil {
+			varDefault = *variableDefinition.Default
+		}
+
+		paramDefinitions[paramName] = &pb.ParamDefinition{
+			Type:        variableDefinition.Type,
+			Default:     varDefault,
+			HasDefault:  variableDefinition.HasDefault(),
+			Description: variableDefinition.Description,
+		}
+	}
+
+	stream.Send(&pb.ExecuteOutputEvent{
+		Type: "paramsRequest",
+		Body: &pb.ExecuteOutputEvent_ParamsRequest{
+			ParamsRequest: &pb.ParamsRequestEvent{
+				ParamDefinitions: paramDefinitions,
+			},
+		},
+	})
+
+	inputEvent, err = stream.Recv()
+	if err != nil {
+		if err == io.EOF {
+			return fmt.Errorf("Fatal error. Never started execution")
+		}
+		return err
+	}
+	if inputEvent.GetType() != "paramsResponse" {
+		return fmt.Errorf("Fatal error. Expected paramsResponse request before executing the stage")
+	}
+
+	paramsResponseEvent := inputEvent.GetParamsResponse()
+	params := paramsResponseEvent.GetParams()
+
 	steps, err := c.ServerDefinition.ListSteps(stage)
+	log.Debugf("Executing stage: %s with %d steps", stage, len(steps))
 	if err != nil {
 		return err
 	}
 
-	renderer := c.createTemplateRenderer()
+	renderer := c.createTemplateRenderer(params)
 
-	stageExec := executor.NewExecutor(c.CorkDir, renderer, stream)
-
-	for _, step := range steps {
-		log.Debugf("Executing step: %s", step.Name)
-		err := stageExec.ExecuteStep(step)
-		if err != nil {
-			return err
-		}
+	stageExec := executor.NewExecutor(c.CorkDir, renderer, stream, steps)
+	err = stageExec.Execute()
+	if err != nil {
+		log.Debugf("Error occurred executing stage")
+		return err
 	}
 	return nil
 }
 
-func (c *CorkTypeServer) createTemplateRenderer() *definition.CorkTemplateRenderer {
+func (c *CorkTypeServer) createTemplateRenderer(params map[string]string) *definition.CorkTemplateRenderer {
 	return definition.NewTemplateRendererWithOptions(definition.CorkTemplateRendererOptions{
 		WorkDir:     c.WorkDir,
 		HostWorkDir: c.HostWorkDir,
 		CacheDir:    c.CacheDir,
+		UserParams:  params,
 	})
 }
 

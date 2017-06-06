@@ -20,7 +20,7 @@ service CorkTypeService {
     rpc Kill(KillRequest) returns (Response) {};
 
     // Executes a specific stage
-    rpc StageExecute(StageExecuteRequest) returns (stream ExecuteEvent) {};
+    rpc StageExecute(stream ExecuteInputEvent) returns (stream ExecuteOutputEvent) {};
 
     // React to an event
     rpc EventReact(EventReactRequest) returns (Response) {};
@@ -38,7 +38,34 @@ message InitializeRequest {
 message StatusRequest {
 }
 
-message ExecuteEvent {
+message ExecuteInputEvent {
+    string type = 1;
+    oneof body {
+        Empty empty = 2;
+        StageExecuteRequestEvent stageExecuteRequest = 3;
+        SignalEvent signal = 4;
+        InputEvent input = 5;
+        ParamsResponseEvent paramsResponse = 6;
+    }
+}
+
+message ParamsResponseEvent {
+    map<string, string> params = 1;
+}
+
+message StageExecuteRequestEvent {
+    string stage = 1;
+}
+
+message SignalEvent {
+    int32 signal = 1;
+}
+
+message InputEvent {
+    bytes bytes = 1;
+}
+
+message ExecuteOutputEvent {
     string type = 1;
     oneof body {
         Empty empty = 2;
@@ -46,7 +73,20 @@ message ExecuteEvent {
         OutputEvent output = 4;
         ExportEvent export = 5;
         ErrorEvent error = 6;
+        ParamsRequestEvent paramsRequest = 7;
     }
+}
+
+message ParamDefinition {
+    string type = 1;
+    string default = 2;
+    bool hasDefault = 3;
+    string description = 4;
+    bool isSensitive = 5;
+}
+
+message ParamsRequestEvent {
+    map<string, ParamDefinition> paramDefinitions = 1;
 }
 
 message EndEvent {

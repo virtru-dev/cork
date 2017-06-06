@@ -2,6 +2,7 @@ package definition
 
 import (
 	"bytes"
+	"fmt"
 	"html/template"
 	"os"
 	"strings"
@@ -14,14 +15,22 @@ type CorkTemplateRendererOptions struct {
 	WorkDir     string
 	HostWorkDir string
 	CacheDir    string
+	UserParams  map[string]string
+}
+
+type TemplateVar struct {
+	Type   string
+	Lookup string
 }
 
 type CorkTemplateRenderer struct {
-	Outputs     map[string]map[string]string
-	FuncMap     template.FuncMap
-	WorkDir     string
-	HostWorkDir string
-	CacheDir    string
+	Outputs      map[string]map[string]string
+	RequiredVars map[string]TemplateVar
+	UserParams   map[string]string
+	FuncMap      template.FuncMap
+	WorkDir      string
+	HostWorkDir  string
+	CacheDir     string
 }
 
 func NewTemplateRenderer() *CorkTemplateRenderer {
@@ -34,23 +43,38 @@ func NewTemplateRenderer() *CorkTemplateRenderer {
 }
 
 func NewTemplateRendererWithOptions(options CorkTemplateRendererOptions) *CorkTemplateRenderer {
+	if options.UserParams == nil {
+		options.UserParams = map[string]string{}
+	}
 	renderer := &CorkTemplateRenderer{
-		WorkDir:     options.WorkDir,
-		HostWorkDir: options.HostWorkDir,
-		CacheDir:    options.CacheDir,
-		Outputs:     map[string]map[string]string{},
+		WorkDir:      options.WorkDir,
+		HostWorkDir:  options.HostWorkDir,
+		CacheDir:     options.CacheDir,
+		Outputs:      map[string]map[string]string{},
+		UserParams:   options.UserParams,
+		RequiredVars: map[string]TemplateVar{},
 	}
 	funcMap := template.FuncMap{
-		"outputs":       renderer.outputsResolve,
+		"output":        renderer.outputsResolve,
 		"WORK_DIR":      renderer.workDir,
 		"HOST_WORK_DIR": renderer.hostWorkDir,
 		"CACHE_DIR":     renderer.cacheDir,
+		"param":         renderer.userResolve,
 	}
 	renderer.FuncMap = funcMap
 	return renderer
 }
 
+func (c *CorkTemplateRenderer) trackRequiredVar(requiredVar TemplateVar) {
+	lookup := fmt.Sprintf("%s:%s", requiredVar.Type, requiredVar.Lookup)
+	c.RequiredVars[lookup] = requiredVar
+}
+
 func (c *CorkTemplateRenderer) outputsResolve(lookup string) string {
+	c.trackRequiredVar(TemplateVar{
+		Type:   "output",
+		Lookup: lookup,
+	})
 	splitLookup := strings.Split(lookup, ".")
 	stepName := splitLookup[0]
 	varName := splitLookup[1]
@@ -77,6 +101,18 @@ func (c *CorkTemplateRenderer) cacheDir() string {
 	return c.CacheDir
 }
 
+func (c *CorkTemplateRenderer) userResolve(lookup string) string {
+	c.trackRequiredVar(TemplateVar{
+		Type:   "user",
+		Lookup: lookup,
+	})
+	userParamValue, ok := c.UserParams[lookup]
+	if !ok {
+		return ""
+	}
+	return userParamValue
+}
+
 func (c *CorkTemplateRenderer) AddOutput(stepName string, varName string, value string) {
 	stepOutputs, ok := c.Outputs[stepName]
 	if !ok {
@@ -97,4 +133,12 @@ func (c *CorkTemplateRenderer) Render(templateStr string) (string, error) {
 		return "", err
 	}
 	return buf.String(), nil
+}
+
+func (c *CorkTemplateRenderer) ResetRequiredVarTracker() {
+	c.RequiredVars = map[string]TemplateVar{}
+}
+
+func (c *CorkTemplateRenderer) ListRequiredVars() map[string]TemplateVar {
+	return c.RequiredVars
 }

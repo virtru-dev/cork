@@ -14,6 +14,7 @@ const maxDepth = 50
 // TemplateRenderer - Interface to user for the template rendering
 type TemplateRenderer interface {
 	Render(templateStr string)
+	AddOutput(stepName string, varName string, value string)
 }
 
 // StepTypes - Defines step types
@@ -24,17 +25,26 @@ var StepTypes = map[string]bool{
 	"export":    true,
 }
 
-type Volumes struct {
-	Names  []string `yaml:"names"`
-	Mounts []string `yaml:"mounts"`
+type Param struct {
+	Type        string  `yaml:"type"`
+	Default     *string `yaml:"default,omitempty"`
+	Description string  `yaml:"description"`
+	IsSensitive bool    `yaml:"is_sensitive"`
+}
+
+func (p Param) HasDefault() bool {
+	return p.Default != nil
 }
 
 // ServerDefinition - Defines a cork server
 type ServerDefinition struct {
 	Stages  map[string]Stage `yaml:"stages"`
-	Volumes Volumes          `yaml:"volumes"`
+	Params  map[string]Param `yaml:"params"`
 	Tags    []string         `yaml:"tags"`
 	Version int              `yaml:"version"`
+
+	// Internal data
+	requiredUserParamsByStage map[string][]string `yaml:"-"`
 }
 
 // Load - Loads the server definition from the default location
@@ -64,13 +74,25 @@ func LoadFromString(defStr string) (*ServerDefinition, error) {
 
 // LoadFromBytes - Loads the server definition from bytes
 func LoadFromBytes(defBytes []byte) (*ServerDefinition, error) {
-	var def ServerDefinition
+	def := ServerDefinition{
+		requiredUserParamsByStage: make(map[string][]string),
+	}
 	err := yaml.Unmarshal(defBytes, &def)
 	if err != nil {
 		return nil, err
 	}
 	err = def.Validate()
 	return &def, err
+}
+
+func (sd *ServerDefinition) ListStages() []string {
+	stageNames := make([]string, len(sd.Stages))
+	i := 0
+	for name := range sd.Stages {
+		stageNames[i] = name
+		i++
+	}
+	return stageNames
 }
 
 // ListSteps - Traverses the steps of a stage and resolves everything to a step
@@ -110,13 +132,78 @@ func (sd *ServerDefinition) resolveSteps(stageName string, depth int) ([]*Step, 
 	return steps, nil
 }
 
-// Validate - Validates a definition file
+// RequiredUserParamsForStage gathers the required user params for a specific stage
+func (sd *ServerDefinition) RequiredUserParamsForStage(stageName string) ([]string, error) {
+	requiredUserParams, ok := sd.requiredUserParamsByStage[stageName]
+
+	if !ok {
+		return nil, fmt.Errorf(`stage "%s" does not exist`, stageName)
+	}
+
+	return requiredUserParams, nil
+}
+
+func (sd *ServerDefinition) walkSteps(stageName string) ([]string, error) {
+	steps, err := sd.resolveSteps(stageName, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	renderer := NewTemplateRenderer()
+	requiredUserParamsMap := map[string]bool{}
+	availableOutputs := map[string]bool{}
+	usedStepNames := map[string]bool{}
+
+	for _, step := range steps {
+		if step.Name != "" {
+			_, ok := usedStepNames[step.Name]
+			if ok {
+				return nil, fmt.Errorf(`Invalid Definition: step names must be unique in a stage. Step "%s" is not unique in stage "%s"`, step.Name, stageName)
+			}
+		}
+
+		step.Args.ResolveArgs(renderer)
+		requiredVarsForStep := renderer.ListRequiredVars()
+
+		for _, requiredVar := range requiredVarsForStep {
+			switch requiredVar.Type {
+			case "user":
+				requiredUserParamsMap[requiredVar.Lookup] = true
+			case "output":
+				_, ok := availableOutputs[requiredVar.Lookup]
+				if !ok {
+					return nil, fmt.Errorf(`Invalid Definition: Output variable "%s" used before available to step "%s"`, requiredVar.Lookup, step.ReferenceName())
+				}
+			}
+			renderer.ResetRequiredVarTracker()
+		}
+
+		for _, availableOutputName := range step.Outputs {
+			availableOutputs[fmt.Sprintf("%s.%s", step.Name, availableOutputName)] = true
+		}
+	}
+
+	var requiredUserParams []string
+
+	for requiredUserParam := range requiredUserParamsMap {
+		_, ok := sd.Params[requiredUserParam]
+		if !ok {
+			return nil, fmt.Errorf(`Invalid Definition: Variable "%s" is not defined. All expected variables need to have a definition.`, requiredUserParam)
+		}
+		requiredUserParams = append(requiredUserParams, requiredUserParam)
+	}
+
+	return requiredUserParams, nil
+}
+
+// Validate validates a definition file by running through the stages
 func (sd *ServerDefinition) Validate() error {
 	for stageName := range sd.Stages {
-		_, err := sd.ListSteps(stageName)
+		requiredUserParams, err := sd.walkSteps(stageName)
 		if err != nil {
 			return err
 		}
+		sd.requiredUserParamsByStage[stageName] = requiredUserParams
 	}
 	return nil
 }

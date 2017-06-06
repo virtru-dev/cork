@@ -16,8 +16,8 @@ build-macos: build-dirs
 build-macos-server: build-dirs
 	docker run --rm -e GOOS=darwin -v `pwd`:/go/src/github.com/virtru/cork -w /go/src/github.com/virtru/cork/server golang:1.8 go build -o ../builds/macos/cork-server
 
-testcorkcontainer: build-linux-server
-	docker build -f Dockerfile.test -t testcorkcontainer .
+test-cork-server: build-linux-server
+	docker build -f Dockerfile.test -t test-cork-server .
 
 build-client-test:
 	cd client_test && go build -o client-test .
@@ -31,3 +31,6 @@ proto-go:
 
 proto-py:
 	python -m grpc_tools.protoc -I./protocol --python_out=client_test --grpc_python_out=client_test protocol/cork.proto
+
+test:
+	base=$(echo $PWD | sed "s|$GOPATH/src/||") go test $(go list ./... | grep -v vendor | sed "s|$base/|./|")

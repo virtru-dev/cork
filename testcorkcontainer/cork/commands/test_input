@@ -1,0 +1,8 @@
+#!/usr/bin/env python
+import os
+
+def main():
+    print "RECEIVED FOR BAR: %s" % os.environ.get("CORK_PARAM_BAR")
+
+if __name__ == '__main__':
+    main()

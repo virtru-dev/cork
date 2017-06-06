@@ -2,6 +2,7 @@ package executor
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path"
@@ -18,6 +19,19 @@ import (
 
 func init() {
 	RegisterHandler("command", CommandStepHandler)
+	RegisterRunner("command", CommandStepRunnerFactory)
+}
+
+func CommandStepRunnerFactory(params StepRunnerParams) (StepRunner, error) {
+	runner := &CommandStepRunner{}
+
+	log.Debugf("Init params : %+v", params)
+
+	err := runner.Initialize(params)
+	if err != nil {
+		return nil, err
+	}
+	return runner, nil
 }
 
 // CommandStepHandler - Handles executing a command step
@@ -99,6 +113,38 @@ func getOutputs(commandName string, outputsDir string, outputKeys []string) (map
 		outputs[key] = string(data)
 	}
 	return outputs, nil
+}
+
+type StdinPiper struct {
+	InputBytesChan chan []byte
+	KillInput      chan bool
+}
+
+func NewStdinPiper() *StdinPiper {
+	return &StdinPiper{
+		InputBytesChan: make(chan []byte),
+		KillInput:      make(chan bool),
+	}
+}
+
+func (s *StdinPiper) Read(p []byte) (n int, err error) {
+	select {
+	case newInputBytes := <-s.InputBytesChan:
+		for i, b := range newInputBytes {
+			p[i] = b
+		}
+		return len(newInputBytes), nil
+	case <-s.KillInput:
+		return 0, io.EOF
+	}
+}
+
+func (s *StdinPiper) Kill() {
+	s.KillInput <- true
+}
+
+func (s *StdinPiper) Write(bytes []byte) {
+	s.InputBytesChan <- bytes
 }
 
 type Command struct {
@@ -226,4 +272,87 @@ func (s *Command) ExecCommand() *exec.Cmd {
 	cmd := exec.Command(s.Path)
 	cmd.Env = os.Environ()
 	return cmd
+}
+
+type CommandStepRunner struct {
+	Params       StepRunnerParams
+	Cmd          *exec.Cmd
+	StdinPiper   *StdinPiper
+	StepStreamer *streamer.StepStreamer
+}
+
+func (c *CommandStepRunner) Initialize(params StepRunnerParams) error {
+	c.Params = params
+	log.Debugf("Loading command: %s", c.Params.Args.Command)
+
+	command, err := LoadCommand(c.Params.Context.CorkDir, c.Params.Args.Command)
+	if err != nil {
+		return err
+	}
+
+	c.Cmd = command.ExecCommand()
+	return nil
+}
+
+func (c *CommandStepRunner) Run() {
+	context := c.Params.Context
+	log.Debugf("Executing command: %s", c.Params.Args.Command)
+
+	stepStreamer := streamer.New(c.Params.Stream)
+	defer stepStreamer.Close()
+
+	cmd := c.Cmd
+
+	for key, value := range c.Params.Args.Params {
+		upperKey := strings.ToUpper(key)
+		cmd.Env = append(cmd.Env, fmt.Sprintf("CORK_PARAM_%s=%s", upperKey, value))
+
+		// Support the old style until we get all existing cork servers using this
+		cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", upperKey, value))
+	}
+
+	cmd.Dir = context.WorkDir
+
+	cmd.Env = append(cmd.Env, fmt.Sprintf("CORK_DIR=%s", context.CorkDir))
+	cmd.Env = append(cmd.Env, fmt.Sprintf("CORK_WORK_DIR=%s", context.WorkDir))
+	cmd.Env = append(cmd.Env, fmt.Sprintf("CORK_HOST_WORK_DIR=%s", context.HostWorkDir))
+	cmd.Env = append(cmd.Env, fmt.Sprintf("CACHE_DIR=%s", context.CacheDir))
+	cmd.Env = append(cmd.Env, fmt.Sprintf("CORK_OUTPUTS_DIR=%s", context.OutputsDir))
+
+	log.Debugf("Env for command %s: %v", c.Params.Args.Command, cmd.Env)
+
+	stdinPiper := NewStdinPiper()
+
+	c.StdinPiper = stdinPiper
+	c.StepStreamer = stepStreamer
+	cmd.Stdin = stdinPiper
+
+	err := stepStreamer.Run(cmd)
+	if err != nil {
+		log.Debugf("Command %s encountered an error")
+		c.Params.ErrorChan <- err
+		c.Params.DoneChan <- true
+		return
+	}
+
+	err = cmd.Wait()
+	if err != nil {
+		c.Params.ErrorChan <- err
+		c.Params.DoneChan <- true
+		return
+	}
+	c.Params.DoneChan <- true
+	return
+}
+
+func (c *CommandStepRunner) HandleInput(bytes []byte) error {
+	err := c.StepStreamer.Write(bytes)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *CommandStepRunner) HandleSignal(signal int32) error {
+	return nil
 }

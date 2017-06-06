@@ -12,11 +12,13 @@ import (
 )
 
 type StepStream interface {
-	Send(event *pb.ExecuteEvent) error
+	Recv() (*pb.ExecuteInputEvent, error)
+	Send(event *pb.ExecuteOutputEvent) error
 }
 
 type StepStreamer struct {
 	Stream StepStream
+	Pty    *os.File
 }
 
 func New(stream StepStream) *StepStreamer {
@@ -25,16 +27,22 @@ func New(stream StepStream) *StepStreamer {
 	}
 }
 
+func (c *StepStreamer) Write(bytes []byte) error {
+	_, err := c.Pty.Write(bytes)
+	return err
+}
+
 func (c *StepStreamer) Run(cmd *exec.Cmd) error {
 	pty, err := pty.Start(cmd)
 	if err != nil {
 		return err
 	}
+	c.Pty = pty
 
 	stdoutCapture := capture.New(func(p []byte) error {
-		current := pb.ExecuteEvent{
+		current := pb.ExecuteOutputEvent{
 			Type: "output",
-			Body: &pb.ExecuteEvent_Output{
+			Body: &pb.ExecuteOutputEvent_Output{
 				Output: &pb.OutputEvent{
 					Bytes:  p,
 					Stream: "stdout",

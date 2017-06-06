@@ -1,0 +1,46 @@
+version: 1
+
+# 1. Client makes StageExecuteRequest
+# 2. Server makes ParamsRequest (could be empty) with all the 
+# 3. Client returns ParamsResponse after collecting all necessary parameters
+# 4. Server executes the stage
+
+# Variables definitions must be named in order to be used
+variables:
+  foo:
+    default: "foo"
+    description: "The foo variable"
+    type: "string"
+  bar:
+    default: "bar"
+    description: "The bar variable"
+    type: "string"
+
+stages:
+  build:
+    - name: build_container
+      type: command
+      args:
+        command: build_container
+        params:
+          foo: '{{ variables "foo" }}'
+      outputs: 
+        - app_image
+    
+    - type: stage
+      args:
+        stage: input
+
+  test:
+    - name: test
+      type: command
+      args:
+        command: test
+        params:
+          bar: '{{ variables "bar" }}'
+          app_image: '{{ outputs "build_container.app_image" }}'
+
+  default:
+    - type: stage
+      args:
+        stage: build

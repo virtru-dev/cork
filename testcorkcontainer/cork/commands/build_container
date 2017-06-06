@@ -1,8 +1,2 @@
 #!/bin/bash
-ls -haltG
-
 env
-
-touch $CORK_OUTPUTS_DIR/app_image
-
-docker images

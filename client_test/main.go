@@ -1,6 +1,7 @@
 package main
 
 import "github.com/virtru/cork/client"
+import "github.com/virtru/cork/utils/params"
 import "fmt"
 
 func main() {
@@ -9,7 +10,10 @@ func main() {
 		panic(err)
 	}
 
-	err = corkClient.StageExecute("build")
+	providedParams := make(map[string]string)
+	paramsProvider := params.NewInteractiveProvider(providedParams)
+
+	_, err = corkClient.StageExecute("build", paramsProvider)
 	if err != nil {
 		panic(err)
 	}

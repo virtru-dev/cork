@@ -1,5 +1,7 @@
 package definition
 
+import "fmt"
+
 // Export - used for export variable definition
 type Export struct {
 	Name  string `yaml:"name"`
@@ -23,6 +25,13 @@ type Step struct {
 	MatchTags []string `yaml:"match_tags,omitempty"`
 	SkipTags  []string `yaml:"skip_tags,omitempty"`
 	Outputs   []string `yaml:"outputs,omitempty"`
+}
+
+func (s *Step) ReferenceName() string {
+	if s.Name != "" {
+		return s.Name
+	}
+	return fmt.Sprintf("type:%s", s.Type)
 }
 
 func (sa *StepArgs) ResolveArgs(renderer *CorkTemplateRenderer) (*StepArgs, error) {

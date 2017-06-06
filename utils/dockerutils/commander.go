@@ -312,7 +312,6 @@ func (dc *DockerCommander) SetStdio() {
 	dc.Options.Stdout = true
 	dc.Options.Stderr = true
 	dc.Options.ErrorStream = os.Stderr
-	dc.Options.InputStream = os.Stdin
 	dc.Options.OutputStream = os.Stdout
 }
 

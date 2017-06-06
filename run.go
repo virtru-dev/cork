@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"path"
+	"path/filepath"
 	"strings"
 	"syscall"
 
@@ -21,8 +22,9 @@ import (
 
 // CorkDefinition - The Cork Definition file
 type CorkDefinition struct {
-	Name string `yaml:"name,omitempty"`
-	Type string `yaml:"type"`
+	Name   string            `yaml:"name,omitempty"`
+	Type   string            `yaml:"type"`
+	Params map[string]string `yaml:"params,omitempty"`
 }
 
 func (cd *CorkDefinition) LoadName() error {
@@ -61,6 +63,16 @@ func init() {
 				Name:   "ssh-key",
 				Usage:  "The ssh key path to use",
 				EnvVar: "CORK_SSH_KEY",
+			},
+			cli.StringFlag{
+				Name:   "output, o",
+				Usage:  "The path to the output destination",
+				EnvVar: "CORK_OUTPUT_DESTINATION",
+				Value:  "outputs.json",
+			},
+			cli.StringSliceFlag{
+				Name:  "param, p",
+				Usage: `Set Paramater "param_name=param_value"`,
 			},
 		},
 	}
@@ -209,13 +221,40 @@ func executeCorkRun(c *cli.Context, corkDef *CorkDefinition, stageName string) e
 		return err
 	}
 
+	params := c.StringSlice("param")
+
+	if corkDef.Params == nil {
+		corkDef.Params = make(map[string]string)
+	}
+
+	for _, rawParam := range params {
+		splitParams := strings.Split(rawParam, "=")
+
+		paramName := splitParams[0]
+		paramValue := strings.Join(splitParams[1:], "=")
+
+		corkDef.Params[paramName] = paramValue
+	}
+
+	cliOutput := c.String("output")
+	if cliOutput == "" {
+		cliOutput = "outputs.json"
+	}
+
+	outputDestinationPath, err := filepath.Abs(cliOutput)
+	if err != nil {
+		return err
+	}
+
 	options := CorkTypeContainerOptions{
-		ProjectName:     corkDef.Name,
-		CacheVolumeName: metadata.CacheVolumeName(),
-		ImageName:       corkDef.Type,
-		Debug:           c.GlobalBool("debug"),
-		ForcePullImage:  c.Bool("force-pull-image"),
-		SSHKeyPath:      c.String("ssh-key"),
+		ProjectName:           corkDef.Name,
+		CacheVolumeName:       metadata.CacheVolumeName(),
+		ImageName:             corkDef.Type,
+		Debug:                 c.GlobalBool("debug"),
+		ForcePullImage:        c.Bool("force-pull-image"),
+		SSHKeyPath:            c.String("ssh-key"),
+		Definition:            corkDef,
+		OutputDestinationPath: outputDestinationPath,
 	}
 
 	log.Debug("Initializing runner")
@@ -271,6 +310,7 @@ func executeCorkRun(c *cli.Context, corkDef *CorkDefinition, stageName string) e
 		}
 	}
 	color.Green("\nCork is done!")
+	color.Green("Find your outputs: %s", outputDestinationPath)
 	return nil
 }
 

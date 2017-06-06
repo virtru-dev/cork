@@ -15,10 +15,15 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
+	"encoding/json"
+
+	"io/ioutil"
+
 	docker "github.com/fsouza/go-dockerclient"
 	"github.com/phayes/freeport"
 	uuid "github.com/satori/go.uuid"
 	"github.com/virtru/cork/utils/dockerutils"
+	"github.com/virtru/cork/utils/params"
 )
 
 type VolumeMap map[string]string
@@ -27,31 +32,35 @@ var serverCommandTemplate = "/cork-server -e %s serve"
 
 // CorkTypeContainer - Runs a cork job in a container
 type CorkTypeContainer struct {
-	Name            string
-	Image           string
-	DockerClient    *docker.Client
-	Container       *docker.Container
-	DockerHostPath  string
-	Failed          chan bool
-	Control         *Control
-	SSHPort         int
-	CorkPort        int
-	CacheVolumeName string
-	Env             []string
-	ProjectName     string
-	ForcePullImage  bool
-	Debug           bool
-	SSHKeyPath      string
-	Commander       *dockerutils.DockerCommander
+	Name                  string
+	Image                 string
+	DockerClient          *docker.Client
+	Container             *docker.Container
+	DockerHostPath        string
+	Failed                chan bool
+	Control               *Control
+	SSHPort               int
+	CorkPort              int
+	CacheVolumeName       string
+	Env                   []string
+	ProjectName           string
+	ForcePullImage        bool
+	Debug                 bool
+	SSHKeyPath            string
+	Commander             *dockerutils.DockerCommander
+	Definition            *CorkDefinition
+	OutputDestinationPath string
 }
 
 type CorkTypeContainerOptions struct {
-	Debug           bool
-	ImageName       string
-	CacheVolumeName string
-	ProjectName     string
-	ForcePullImage  bool
-	SSHKeyPath      string
+	Debug                 bool
+	ImageName             string
+	CacheVolumeName       string
+	ProjectName           string
+	ForcePullImage        bool
+	SSHKeyPath            string
+	Definition            *CorkDefinition
+	OutputDestinationPath string
 }
 
 // Creates a new cork runner
@@ -74,16 +83,18 @@ func New(dockerClient *docker.Client, control *Control, options CorkTypeContaine
 	}
 
 	runner := CorkTypeContainer{
-		DockerClient:    dockerClient,
-		Image:           options.ImageName,
-		Name:            fmt.Sprintf("cork-%s", uuid.NewV4()),
-		DockerHostPath:  dockerHostPath,
-		CacheVolumeName: options.CacheVolumeName,
-		Control:         control,
-		ProjectName:     options.ProjectName,
-		ForcePullImage:  options.ForcePullImage,
-		Debug:           options.Debug,
-		SSHKeyPath:      options.SSHKeyPath,
+		DockerClient:          dockerClient,
+		Image:                 options.ImageName,
+		Name:                  fmt.Sprintf("cork-%s", uuid.NewV4()),
+		DockerHostPath:        dockerHostPath,
+		CacheVolumeName:       options.CacheVolumeName,
+		Control:               control,
+		ProjectName:           options.ProjectName,
+		ForcePullImage:        options.ForcePullImage,
+		Debug:                 options.Debug,
+		SSHKeyPath:            options.SSHKeyPath,
+		Definition:            options.Definition,
+		OutputDestinationPath: options.OutputDestinationPath,
 	}
 	return &runner, nil
 }
@@ -145,6 +156,10 @@ func (c *CorkTypeContainer) connectClient() (*client.Client, error) {
 	return nil, err
 }
 
+func (c *CorkTypeContainer) getParamsProvider() client.ParamProvider {
+	return params.NewInteractiveProvider(c.Definition.Params)
+}
+
 func (c *CorkTypeContainer) runClient(stageName string, clientErrChan chan error) {
 	go func() {
 		corkClient, err := c.connectClient()
@@ -156,9 +171,22 @@ func (c *CorkTypeContainer) runClient(stageName string, clientErrChan chan error
 		defer corkClient.Close()
 
 		log.Debugf("Running stage %s", stageName)
-		err = corkClient.StageExecute(stageName)
+		exports, err := corkClient.StageExecute(stageName, c.getParamsProvider())
 		if err != nil {
 			log.Debugf("Error occured running StageExecute")
+			clientErrChan <- err
+			return
+		}
+
+		log.Debugf("Writing exports to %s", c.OutputDestinationPath)
+		exportsJSONBytes, err := json.Marshal(exports)
+		if err != nil {
+			clientErrChan <- err
+			return
+		}
+
+		err = ioutil.WriteFile(c.OutputDestinationPath, exportsJSONBytes, 0600)
+		if err != nil {
 			clientErrChan <- err
 			return
 		}

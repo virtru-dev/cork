@@ -12,9 +12,9 @@ func TestTemplateRenderOutputs(t *testing.T) {
 	renderer.AddOutput("foo", "bar", "baz")
 	renderer.AddOutput("foo", "fie", "foe")
 	renderer.AddOutput("blah", "blah", "blah")
-	rendered1, err := renderer.Render(`{{ outputs "foo.bar"}}`)
-	rendered2, err := renderer.Render(`{{ outputs "foo.fie"}}`)
-	rendered3, err := renderer.Render(`{{ outputs "blah.blah"}}`)
+	rendered1, err := renderer.Render(`{{ output "foo.bar"}}`)
+	rendered2, err := renderer.Render(`{{ output "foo.fie"}}`)
+	rendered3, err := renderer.Render(`{{ output "blah.blah"}}`)
 	if assert.NoError(t, err) {
 		assert.Equal(t, "baz", rendered1)
 		assert.Equal(t, "foe", rendered2)
