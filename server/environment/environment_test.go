@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/virtru/cork/server/environment"
-	"github.com/virtru/cork/testutils"
+	"github.com/virtru/cork/utils/test"
 )
 
 var fakeEnv = map[string]string{
