@@ -1,8 +1,8 @@
 # cork - The most reliable build tool ever conceived (_... probably_)
 
-cork is a build tool for projects that utilizes containerization to achieve
-highly reliable and highly portable build workflows. cork is the tool you
-always wanted but didn't know how to describe.
+cork is a build tool for projects that executes build steps in docker
+containers to achieve highly reliable and highly portable build workflows. cork
+is the tool you always wanted but didn't know how to describe.
 
 Have you ever had to spin up a build agent for your CI tool and needed to build
 node-v4 projects and node-v6? If so, you've run in to issues with tools
