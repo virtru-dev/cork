@@ -1,0 +1,53 @@
+baseURL = "http://www.example.com"
+title = "Minimo"
+
+theme = "minimo"
+
+googleAnalytics = ""
+Paginate = 3
+
+[params]
+  description = "Minimalist theme for Hugo"
+  dateFormat = "2006, Jan 2"
+  copyrightOwner = "MunifTanjim"
+  copyrightStartYear = "2017"
+  hideSingleNavigation = false
+
+[params.opengraph]
+  [params.opengraph.facebook]
+    admins = ""
+    appid = ""
+
+[taxonomies]
+  category = "categories"
+  tag = "tags"
+
+[social]
+  facebook = ""
+
+[author]
+  name = "Minimo"
+
+[author.social]
+  facebook = "MunifTanjim"
+  github = "MunifTanjim/minimo"
+  twitter = "MunifTanjim"
+
+[permalinks]
+  page = "/:slug/"
+
+[[menu.main]]
+  name = "Hugo Themes"
+  weight = -70
+  identifier = "gohugo"
+  url = "https://themes.gohugo.io"
+
+# Language Configuration
+defaultContentLanguage = "en"
+
+[languages]
+  # edit this block for your own language
+  [languages.en]
+    lang = "en"
+    languageName = "English"
+    weight = 1

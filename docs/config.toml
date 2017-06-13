@@ -1,0 +1,53 @@
+baseURL = "http://www.corktool.io"
+title = "Cork"
+SectionPagesMenu = "main"
+
+theme = "minimo"
+
+googleAnalytics = ""
+Paginate = 3
+
+[params]
+  description = "The most reliable build tool ever conceived (... probably)"
+  dateFormat = "2006, Jan 2"
+  copyrightOwner = "Virtru Corporation"
+  copyrightStartYear = "2017"
+  hideSingleNavigation = false
+
+[params.opengraph]
+  [params.opengraph.facebook]
+    admins = ""
+    appid = ""
+
+[taxonomies]
+  category = "categories"
+  tag = "tags"
+
+[social]
+  facebook = ""
+
+[author]
+  name = "Reuven Gonzales"
+
+[author.social]
+  github = "ravenac95"
+  twitter = "ravenac95"
+
+[permalinks]
+  page = "/:slug/"
+
+[[menu.main]]
+  name = "Github"
+  weight = -70
+  identifier = "corkgh"
+  url = "https://github.com/virtru/cork"
+
+# Language Configuration
+defaultContentLanguage = "en"
+
+[languages]
+  # edit this block for your own language
+  [languages.en]
+    lang = "en"
+    languageName = "English"
+    weight = 1

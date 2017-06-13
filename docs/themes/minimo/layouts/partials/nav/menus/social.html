@@ -1,0 +1,13 @@
+<nav>
+  <ul class='social-menu'>
+  {{ range $key, $val := .Site.Author.social }}
+    {{ if $val }}
+    <li>
+      <a href='{{ print (index $.Site.Data.social.base $key) $val | absURL }}' target='_blank' rel='noopener'>
+        {{ partial "svg/social.html" $key }}
+      </a>
+    </li>
+    {{ end }}
+  {{ end }}
+  </ul>
+</nav>
