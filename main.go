@@ -12,8 +12,6 @@ import (
 // Commands
 var Commands []cli.Command
 
-const Version = "0.1.0"
-
 func setupApp() *cli.App {
 	app := cli.NewApp()
 
