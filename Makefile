@@ -6,12 +6,14 @@ build-dirs:
 
 build-linux: build-dirs
 	docker run --rm -v `pwd`:/go/src/github.com/virtru/cork -w /go/src/github.com/virtru/cork golang:1.8 go build -o builds/linux/cork
+	cd builds/linux && zip cork-linux-amd64.zip cork
 
 build-linux-server: build-dirs
 	docker run --rm -v `pwd`:/go/src/github.com/virtru/cork -w /go/src/github.com/virtru/cork/server golang:1.8 go build -o ../builds/linux/cork-server
 
 build-macos: build-dirs
 	docker run --rm -e GOOS=darwin -v `pwd`:/go/src/github.com/virtru/cork -w /go/src/github.com/virtru/cork golang:1.8 go build -o builds/macos/cork
+	cd builds/macos && zip cork-macos-amd64.zip cork
 
 build-macos-server: build-dirs
 	docker run --rm -e GOOS=darwin -v `pwd`:/go/src/github.com/virtru/cork -w /go/src/github.com/virtru/cork/server golang:1.8 go build -o ../builds/macos/cork-server
