@@ -1,0 +1,294 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Quick Start Guide &#8212; cork 0.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Dive into the internals" href="dive-into-internals.html" />
+    <link rel="prev" title="Installing Cork" href="installing.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="quick-start-guide">
+<span id="quick-start-guide"></span><h1>Quick Start Guide<a class="headerlink" href="#quick-start-guide" title="Permalink to this headline">¶</a></h1>
+<p>This quick start guide will walk you through creating your first cork server.
+You don't need to know the nitty gritty details yet, but the cork server is
+what executes your build plan. It's a docker container that contains all the
+scripts, dependencies, and different stages of your cork build. For this
+quick start example we will create a basic cork server to handle a very
+simple node.js project. This guide assumes you have some knowledge of bash
+and docker, but you shouldn't need all that much knowledge.</p>
+<div class="section" id="step-1-create-a-new-directory-for-your-cork-server">
+<span id="step-1-create-a-new-directory-for-your-cork-server"></span><h2>Step 1: Create a new directory for your cork server<a class="headerlink" href="#step-1-create-a-new-directory-for-your-cork-server" title="Permalink to this headline">¶</a></h2>
+<p>Feel free to name this directory anything you'd like, but for this tutorial
+we're going to call this <code class="docutils literal"><span class="pre">practice-project</span></code>.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ mkdir practice-project
+</pre></div>
+</div>
+</div>
+<div class="section" id="step-2-create-the-scaffolding-for-the-project">
+<span id="step-2-create-the-scaffolding-for-the-project"></span><h2>Step 2: Create the scaffolding for the project<a class="headerlink" href="#step-2-create-the-scaffolding-for-the-project" title="Permalink to this headline">¶</a></h2>
+<p>There is work to making this easier but at the moment do all of the following
+to get the proper scaffolding:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ cd practice-project # cd into your project
+$ mkdir -p cork/commands
+$ mkdir -p cork/hooks
+</pre></div>
+</div>
+</div>
+<div class="section" id="step-3-create-the-dockerfile-for-the-cork-server">
+<span id="step-3-create-the-dockerfile-for-the-cork-server"></span><h2>Step 3: Create the Dockerfile for the cork server<a class="headerlink" href="#step-3-create-the-dockerfile-for-the-cork-server" title="Permalink to this headline">¶</a></h2>
+<p>In the root of your <code class="docutils literal"><span class="pre">practice-project</span></code> make the following <code class="docutils literal"><span class="pre">Dockerfile</span></code>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">FROM</span> <span class="n">virtru</span><span class="o">/</span><span class="n">base</span><span class="o">-</span><span class="n">cork</span><span class="o">-</span><span class="n">server</span><span class="p">:</span><span class="n">xenial</span>
+
+<span class="n">RUN</span> <span class="n">curl</span> <span class="o">-</span><span class="n">sL</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">deb</span><span class="o">.</span><span class="n">nodesource</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">setup_6</span><span class="o">.</span><span class="n">x</span> <span class="o">|</span> <span class="n">bash</span> <span class="o">-</span> <span class="o">&amp;&amp;</span> \
+    <span class="n">apt</span><span class="o">-</span><span class="n">get</span> <span class="n">update</span> <span class="o">&amp;&amp;</span> \
+    <span class="n">apt</span><span class="o">-</span><span class="n">get</span> <span class="n">install</span> <span class="o">-</span><span class="n">y</span> <span class="n">nodejs</span> <span class="o">&amp;&amp;</span> \
+    <span class="n">npm</span> <span class="n">install</span> <span class="o">-</span><span class="n">g</span> <span class="n">npm</span>
+</pre></div>
+</div>
+<p>You will notice we are basing this docker container off of the
+<code class="docutils literal"><span class="pre">virtru/base-cork-server:xenial</span></code> container. This container will automatically
+copy the <code class="docutils literal"><span class="pre">cork</span></code> directory into the correct place for the cork server.</p>
+</div>
+<div class="section" id="step-4-create-a-build-script">
+<span id="step-4-create-a-build-script"></span><h2>Step 4: Create a build script<a class="headerlink" href="#step-4-create-a-build-script" title="Permalink to this headline">¶</a></h2>
+<p>We're going to create a simple build script for now just to get things going.
+The build script will do basically nothing except say &quot;Hello, world&quot;. Don't
+worry this is just to get a feel for things :)</p>
+<p>So create a file <code class="docutils literal"><span class="pre">cork/commands/build</span></code> with this data:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="ch">#!/bin/bash</span>
+
+<span class="n">echo</span> <span class="s2">&quot;Hello, world&quot;</span>
+</pre></div>
+</div>
+<p>Then set this file to be executable with:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ chmod +x cork/commands/build
+</pre></div>
+</div>
+</div>
+<div class="section" id="step-5-create-a-definition-yml-to-define-your-build-workflow">
+<span id="step-5-create-a-definition-yml-to-define-your-build-workflow"></span><h2>Step 5: Create a definition.yml to define your build workflow<a class="headerlink" href="#step-5-create-a-definition-yml-to-define-your-build-workflow" title="Permalink to this headline">¶</a></h2>
+<p>Cork servers can host a set of workflows that we call stages. Each stage is
+composed of steps that can do things like execute commands or export
+variables from a build, or call other stages. For now, we only need one
+stage, the <code class="docutils literal"><span class="pre">build</span></code> stage.</p>
+<p>Do that by creating a file <code class="docutils literal"><span class="pre">cork/definition.yml</span></code> with this data:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="c1"># The version is required</span>
+<span class="n">version</span><span class="p">:</span> <span class="mi">1</span>
+
+<span class="c1"># Define the stages</span>
+<span class="n">stages</span><span class="p">:</span>
+  <span class="c1"># The build stage runs all the steps for the build</span>
+  <span class="n">build</span><span class="p">:</span>
+    <span class="o">-</span> <span class="n">name</span><span class="p">:</span> <span class="n">build</span>
+      <span class="nb">type</span><span class="p">:</span> <span class="n">command</span>
+      <span class="n">args</span><span class="p">:</span>
+        <span class="n">command</span><span class="p">:</span> <span class="n">build</span>
+
+  <span class="c1"># The default stage is run if you simply run `cork run`</span>
+  <span class="n">default</span><span class="p">:</span>
+    <span class="o">-</span> <span class="nb">type</span><span class="p">:</span> <span class="n">stage</span>
+      <span class="n">args</span><span class="p">:</span>
+        <span class="n">stage</span><span class="p">:</span> <span class="n">build</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="step-6-build-your-first-cork-server">
+<span id="step-6-build-your-first-cork-server"></span><h2>Step 6: Build your first cork server<a class="headerlink" href="#step-6-build-your-first-cork-server" title="Permalink to this headline">¶</a></h2>
+<p>To build the cork server. You simply run:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ cork run
+</pre></div>
+</div>
+<p>And if you've followed along your cork server will build properly.</p>
+</div>
+<div class="section" id="step-7-run-your-hello-world-cork-server">
+<span id="step-7-run-your-hello-world-cork-server"></span><h2>Step 7: Run your hello world cork server<a class="headerlink" href="#step-7-run-your-hello-world-cork-server" title="Permalink to this headline">¶</a></h2>
+<p>To run your hello world cork server:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ cork ext-run practice-project build
+</pre></div>
+</div>
+<p>If all was good you should see output look something like this:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>Cork - The most reliable build tool ever conceived! (... probably)
+
+Cork Is Running
+-------------------
+Project: practice-project
+Project Type: virtru/cork-server-project:latest
+Executing Stage: default
+-------------------
+
+&gt;&gt;&gt; Executing command step &quot;build&quot;
+/cork/commands/build: line 5: [: missing `]&#39;
+Sending build context to Docker daemon 6.144 kB
+Step 1/2 : FROM virtru/base-cork-server:xenial
+# Executing 1 build trigger...
+Step 1/1 : COPY cork /cork
+ ---&gt; Using cache
+ ---&gt; 444444444444
+Successfully built 444444444444
+
+Hello, world!
+
+Cork is done!
+Find your outputs: /Users/raven/development/virtru/practice-project/outputs.json
+</pre></div>
+</div>
+<p>Obviously, you want cork to do much more than this, so let's move on to the
+next step.</p>
+</div>
+<div class="section" id="step-8-making-the-build-stage-useful">
+<span id="step-8-making-the-build-stage-useful"></span><h2>Step 8: Making the build stage useful<a class="headerlink" href="#step-8-making-the-build-stage-useful" title="Permalink to this headline">¶</a></h2>
+<p>Ok let's do something interesting with the build stage and use it to install
+a node project and package it into a docker container.</p>
+<p>Change your <code class="docutils literal"><span class="pre">cork/commands/build</span></code> script like so:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="ch">#!/bin/bash</span>
+
+<span class="n">npm</span> <span class="n">install</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="step-9-making-an-example-node-project-to-test-with">
+<span id="step-9-making-an-example-node-project-to-test-with"></span><h2>Step 9: Making an example node project to test with<a class="headerlink" href="#step-9-making-an-example-node-project-to-test-with" title="Permalink to this headline">¶</a></h2>
+<p>Before we can try to use this cork server let's setup a simple node project
+to use this.</p>
+<p>First setup the example project scaffolding (from the root of the <code class="docutils literal"><span class="pre">practice-project</span></code>):</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ mkdir -p example
+</pre></div>
+</div>
+<p>Next create an <code class="docutils literal"><span class="pre">example/package.json</span></code> file:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;example&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;version&quot;</span><span class="p">:</span> <span class="s2">&quot;1.0.0&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;An example project&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;main&quot;</span><span class="p">:</span> <span class="s2">&quot;index.js&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;author&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;license&quot;</span><span class="p">:</span> <span class="s2">&quot;MIT&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;dependencies&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s2">&quot;express&quot;</span><span class="p">:</span> <span class="s2">&quot;^4.15.3&quot;</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Finally, create a script for the project at <code class="docutils literal"><span class="pre">example/index.js</span></code>:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">const</span> <span class="n">express</span> <span class="o">=</span> <span class="n">require</span><span class="p">(</span><span class="s1">&#39;express&#39;</span><span class="p">)</span>
+<span class="n">const</span> <span class="n">app</span> <span class="o">=</span> <span class="n">express</span><span class="p">()</span>
+
+<span class="n">app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">,</span> <span class="n">function</span> <span class="p">(</span><span class="n">req</span><span class="p">,</span> <span class="n">res</span><span class="p">)</span> <span class="p">{</span>
+  <span class="n">res</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="s1">&#39;Hello World!&#39;</span><span class="p">)</span>
+<span class="p">})</span>
+
+<span class="n">app</span><span class="o">.</span><span class="n">listen</span><span class="p">(</span><span class="n">process</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">PORT</span><span class="p">,</span> <span class="n">function</span> <span class="p">()</span> <span class="p">{</span>
+  <span class="n">console</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s1">&#39;Example app listening on port &#39;</span> <span class="o">+</span> <span class="n">process</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">PORT</span><span class="p">)</span>
+<span class="p">})</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="step-10">
+<span id="step-10"></span><h2>Step 10:<a class="headerlink" href="#step-10" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Quick Start Guide</a><ul>
+<li><a class="reference internal" href="#step-1-create-a-new-directory-for-your-cork-server">Step 1: Create a new directory for your cork server</a></li>
+<li><a class="reference internal" href="#step-2-create-the-scaffolding-for-the-project">Step 2: Create the scaffolding for the project</a></li>
+<li><a class="reference internal" href="#step-3-create-the-dockerfile-for-the-cork-server">Step 3: Create the Dockerfile for the cork server</a></li>
+<li><a class="reference internal" href="#step-4-create-a-build-script">Step 4: Create a build script</a></li>
+<li><a class="reference internal" href="#step-5-create-a-definition-yml-to-define-your-build-workflow">Step 5: Create a definition.yml to define your build workflow</a></li>
+<li><a class="reference internal" href="#step-6-build-your-first-cork-server">Step 6: Build your first cork server</a></li>
+<li><a class="reference internal" href="#step-7-run-your-hello-world-cork-server">Step 7: Run your hello world cork server</a></li>
+<li><a class="reference internal" href="#step-8-making-the-build-stage-useful">Step 8: Making the build stage useful</a></li>
+<li><a class="reference internal" href="#step-9-making-an-example-node-project-to-test-with">Step 9: Making an example node project to test with</a></li>
+<li><a class="reference internal" href="#step-10">Step 10:</a></li>
+</ul>
+</li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="installing.html" title="previous chapter">Installing Cork</a></li>
+      <li>Next: <a href="dive-into-internals.html" title="next chapter">Dive into the internals</a></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/tutorial/quick-start.md.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Virtru Corporation.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="../_sources/tutorial/quick-start.md.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

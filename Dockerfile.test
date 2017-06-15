@@ -1,4 +1,0 @@
-FROM virtru/base-cork-server:xenial
-
-# Copy defintion.yml to /cork/definition.yml
-COPY tests/test-cork-server/cork /cork
