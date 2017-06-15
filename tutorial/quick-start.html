@@ -52,6 +52,13 @@ scripts, dependencies, and different stages of your cork build. For this
 quick start example we will create a basic cork server to handle a very
 simple node.js project. This guide assumes you have some knowledge of bash
 and docker, but you shouldn't need all that much knowledge.</p>
+<div class="section" id="before-we-begin">
+<span id="before-we-begin"></span><h2>Before we begin<a class="headerlink" href="#before-we-begin" title="Permalink to this headline">¶</a></h2>
+<p>Before using cork on your local system it's best to setup your ssh agent with
+your private key. On some kind of automated server you may have a different
+way to handle this, but on a local system the ssh-agent is by far the most
+useful.</p>
+</div>
 <div class="section" id="step-1-create-a-new-directory-for-your-cork-server">
 <span id="step-1-create-a-new-directory-for-your-cork-server"></span><h2>Step 1: Create a new directory for your cork server<a class="headerlink" href="#step-1-create-a-new-directory-for-your-cork-server" title="Permalink to this headline">¶</a></h2>
 <p>Feel free to name this directory anything you'd like, but for this tutorial
@@ -69,16 +76,18 @@ $ mkdir -p cork/commands
 $ mkdir -p cork/hooks
 </pre></div>
 </div>
+<p>The last piece of scaffolding is a <code class="docutils literal"><span class="pre">cork.yml</span></code> file that will tell cork that
+you'd like to use the <code class="docutils literal"><span class="pre">cork-server-project</span></code> as the cork server for this
+project.</p>
+<p>This file looks like this:</p>
+<div class="highlight-yaml"><div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">type</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">virtru/cork-server-project:latest</span>
+</pre></div>
+</div>
 </div>
 <div class="section" id="step-3-create-the-dockerfile-for-the-cork-server">
 <span id="step-3-create-the-dockerfile-for-the-cork-server"></span><h2>Step 3: Create the Dockerfile for the cork server<a class="headerlink" href="#step-3-create-the-dockerfile-for-the-cork-server" title="Permalink to this headline">¶</a></h2>
 <p>In the root of your <code class="docutils literal"><span class="pre">practice-project</span></code> make the following <code class="docutils literal"><span class="pre">Dockerfile</span></code>:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">FROM</span> <span class="n">virtru</span><span class="o">/</span><span class="n">base</span><span class="o">-</span><span class="n">cork</span><span class="o">-</span><span class="n">server</span><span class="p">:</span><span class="n">xenial</span>
-
-<span class="n">RUN</span> <span class="n">curl</span> <span class="o">-</span><span class="n">sL</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">deb</span><span class="o">.</span><span class="n">nodesource</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">setup_6</span><span class="o">.</span><span class="n">x</span> <span class="o">|</span> <span class="n">bash</span> <span class="o">-</span> <span class="o">&amp;&amp;</span> \
-    <span class="n">apt</span><span class="o">-</span><span class="n">get</span> <span class="n">update</span> <span class="o">&amp;&amp;</span> \
-    <span class="n">apt</span><span class="o">-</span><span class="n">get</span> <span class="n">install</span> <span class="o">-</span><span class="n">y</span> <span class="n">nodejs</span> <span class="o">&amp;&amp;</span> \
-    <span class="n">npm</span> <span class="n">install</span> <span class="o">-</span><span class="n">g</span> <span class="n">npm</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">FROM</span> <span class="n">virtru</span><span class="o">/</span><span class="n">common</span><span class="o">-</span><span class="n">cork</span><span class="o">-</span><span class="n">server</span><span class="p">:</span><span class="n">xenial</span>
 </pre></div>
 </div>
 <p>You will notice we are basing this docker container off of the
@@ -108,23 +117,23 @@ composed of steps that can do things like execute commands or export
 variables from a build, or call other stages. For now, we only need one
 stage, the <code class="docutils literal"><span class="pre">build</span></code> stage.</p>
 <p>Do that by creating a file <code class="docutils literal"><span class="pre">cork/definition.yml</span></code> with this data:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="c1"># The version is required</span>
-<span class="n">version</span><span class="p">:</span> <span class="mi">1</span>
+<div class="highlight-yaml"><div class="highlight"><pre><span></span><span class="c1"># The version is required</span>
+<span class="l l-Scalar l-Scalar-Plain">version</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">1</span>
 
 <span class="c1"># Define the stages</span>
-<span class="n">stages</span><span class="p">:</span>
+<span class="l l-Scalar l-Scalar-Plain">stages</span><span class="p p-Indicator">:</span>
   <span class="c1"># The build stage runs all the steps for the build</span>
-  <span class="n">build</span><span class="p">:</span>
-    <span class="o">-</span> <span class="n">name</span><span class="p">:</span> <span class="n">build</span>
-      <span class="nb">type</span><span class="p">:</span> <span class="n">command</span>
-      <span class="n">args</span><span class="p">:</span>
-        <span class="n">command</span><span class="p">:</span> <span class="n">build</span>
+  <span class="l l-Scalar l-Scalar-Plain">build</span><span class="p p-Indicator">:</span>
+    <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">name</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">build</span>
+      <span class="l l-Scalar l-Scalar-Plain">type</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">command</span>
+      <span class="l l-Scalar l-Scalar-Plain">args</span><span class="p p-Indicator">:</span>
+        <span class="l l-Scalar l-Scalar-Plain">command</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">build</span>
 
   <span class="c1"># The default stage is run if you simply run `cork run`</span>
-  <span class="n">default</span><span class="p">:</span>
-    <span class="o">-</span> <span class="nb">type</span><span class="p">:</span> <span class="n">stage</span>
-      <span class="n">args</span><span class="p">:</span>
-        <span class="n">stage</span><span class="p">:</span> <span class="n">build</span>
+  <span class="l l-Scalar l-Scalar-Plain">default</span><span class="p p-Indicator">:</span>
+    <span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">type</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">stage</span>
+      <span class="l l-Scalar l-Scalar-Plain">args</span><span class="p p-Indicator">:</span>
+        <span class="l l-Scalar l-Scalar-Plain">stage</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">build</span>
 </pre></div>
 </div>
 </div>
@@ -176,14 +185,35 @@ next step.</p>
 <p>Ok let's do something interesting with the build stage and use it to install
 a node project and package it into a docker container.</p>
 <p>Change your <code class="docutils literal"><span class="pre">cork/commands/build</span></code> script like so:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="ch">#!/bin/bash</span>
+<div class="highlight-bash"><div class="highlight"><pre><span></span><span class="ch">#!/bin/bash</span>
 
-<span class="n">npm</span> <span class="n">install</span>
+docker build -t <span class="si">${</span><span class="nv">CORK_PROJECT_NAME</span><span class="si">}</span>-container .
+
+<span class="nb">echo</span> <span class="s2">&quot;Created a container </span><span class="si">${</span><span class="nv">CORK_PROJECT_NAME</span><span class="si">}</span><span class="s2">-container</span>
+</pre></div>
+</div>
+<p>And add a dockerfile like so:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">FROM</span> <span class="n">ubuntu</span><span class="p">:</span><span class="n">xenial</span>
+
+<span class="n">ENV</span> <span class="n">PORT</span><span class="o">=</span><span class="mi">9000</span>
+<span class="n">EXPOSE</span> <span class="mi">9000</span>
+
+<span class="n">RUN</span> <span class="n">curl</span> <span class="o">-</span><span class="n">sL</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">deb</span><span class="o">.</span><span class="n">nodesource</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">setup_6</span><span class="o">.</span><span class="n">x</span> <span class="o">|</span> <span class="n">bash</span> <span class="o">-</span> <span class="o">&amp;&amp;</span> \
+    <span class="n">apt</span><span class="o">-</span><span class="n">get</span> <span class="n">update</span> <span class="o">&amp;&amp;</span> \
+    <span class="n">apt</span><span class="o">-</span><span class="n">get</span> <span class="n">install</span> <span class="o">-</span><span class="n">y</span> <span class="n">nodejs</span> <span class="o">&amp;&amp;</span> \
+    <span class="n">npm</span> <span class="n">install</span> <span class="o">-</span><span class="n">g</span> <span class="n">npm</span> <span class="o">&amp;&amp;</span> \
+    <span class="n">mkdir</span> <span class="o">/</span><span class="n">app</span>
+
+<span class="n">WORKDIR</span> <span class="o">/</span><span class="n">app</span>
+
+<span class="n">COPY</span> <span class="n">package</span><span class="o">.</span><span class="n">json</span> <span class="o">/</span><span class="n">app</span><span class="o">/</span><span class="n">package</span><span class="o">.</span><span class="n">json</span>
+<span class="n">RUN</span> <span class="n">npm</span> <span class="n">install</span>
+<span class="n">COPY</span> <span class="n">index</span><span class="o">.</span><span class="n">js</span> <span class="o">/</span><span class="n">app</span><span class="o">/</span><span class="n">index</span><span class="o">.</span><span class="n">js</span>
 </pre></div>
 </div>
 </div>
-<div class="section" id="step-9-making-an-example-node-project-to-test-with">
-<span id="step-9-making-an-example-node-project-to-test-with"></span><h2>Step 9: Making an example node project to test with<a class="headerlink" href="#step-9-making-an-example-node-project-to-test-with" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="step-9-create-a-simple-express-app-to-test-with">
+<span id="step-9-create-a-simple-express-app-to-test-with"></span><h2>Step 9: Create a simple express app to test with<a class="headerlink" href="#step-9-create-a-simple-express-app-to-test-with" title="Permalink to this headline">¶</a></h2>
 <p>Before we can try to use this cork server let's setup a simple node project
 to use this.</p>
 <p>First setup the example project scaffolding (from the root of the <code class="docutils literal"><span class="pre">practice-project</span></code>):</p>
@@ -204,22 +234,50 @@ to use this.</p>
 <span class="p">}</span>
 </pre></div>
 </div>
-<p>Finally, create a script for the project at <code class="docutils literal"><span class="pre">example/index.js</span></code>:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">const</span> <span class="n">express</span> <span class="o">=</span> <span class="n">require</span><span class="p">(</span><span class="s1">&#39;express&#39;</span><span class="p">)</span>
-<span class="n">const</span> <span class="n">app</span> <span class="o">=</span> <span class="n">express</span><span class="p">()</span>
+<p>Next, create a script for the project at <code class="docutils literal"><span class="pre">example/index.js</span></code>:</p>
+<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="kr">const</span> <span class="nx">express</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;express&#39;</span><span class="p">)</span>
+<span class="kr">const</span> <span class="nx">app</span> <span class="o">=</span> <span class="nx">express</span><span class="p">()</span>
 
-<span class="n">app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">,</span> <span class="n">function</span> <span class="p">(</span><span class="n">req</span><span class="p">,</span> <span class="n">res</span><span class="p">)</span> <span class="p">{</span>
-  <span class="n">res</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="s1">&#39;Hello World!&#39;</span><span class="p">)</span>
+<span class="nx">app</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">req</span><span class="p">,</span> <span class="nx">res</span><span class="p">)</span> <span class="p">{</span>
+  <span class="nx">res</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="s1">&#39;Hello World!&#39;</span><span class="p">)</span>
 <span class="p">})</span>
 
-<span class="n">app</span><span class="o">.</span><span class="n">listen</span><span class="p">(</span><span class="n">process</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">PORT</span><span class="p">,</span> <span class="n">function</span> <span class="p">()</span> <span class="p">{</span>
-  <span class="n">console</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s1">&#39;Example app listening on port &#39;</span> <span class="o">+</span> <span class="n">process</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">PORT</span><span class="p">)</span>
+<span class="nx">app</span><span class="p">.</span><span class="nx">listen</span><span class="p">(</span><span class="nx">process</span><span class="p">.</span><span class="nx">env</span><span class="p">.</span><span class="nx">PORT</span><span class="p">,</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+  <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;Example app listening on port &#39;</span> <span class="o">+</span> <span class="nx">process</span><span class="p">.</span><span class="nx">env</span><span class="p">.</span><span class="nx">PORT</span><span class="p">)</span>
 <span class="p">})</span>
 </pre></div>
 </div>
+<p>Finally, to tie it all together we use a <code class="docutils literal"><span class="pre">cork.yml</span></code> file that will be used to
+tell cork that you'd like to use your <code class="docutils literal"><span class="pre">practice-project</span></code> cork server with
+this example project.</p>
+<p>This file, at <code class="docutils literal"><span class="pre">example/cork.yml</span></code>, should look like this:</p>
+<div class="highlight-yaml"><div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">type</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">practice-project:latest</span>
+</pre></div>
 </div>
-<div class="section" id="step-10">
-<span id="step-10"></span><h2>Step 10:<a class="headerlink" href="#step-10" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="step-10-rebuild-your-cork-server">
+<span id="step-10-rebuild-your-cork-server"></span><h2>Step 10: Rebuild your cork server<a class="headerlink" href="#step-10-rebuild-your-cork-server" title="Permalink to this headline">¶</a></h2>
+<p>From within the root directory run the following:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ cork run
+</pre></div>
+</div>
+</div>
+<div class="section" id="step-11-test-your-cork-server-on-your-express-app">
+<span id="step-11-test-your-cork-server-on-your-express-app"></span><h2>Step 11: Test your cork server on your express app<a class="headerlink" href="#step-11-test-your-cork-server-on-your-express-app" title="Permalink to this headline">¶</a></h2>
+<p>Now let's build the docker container for our express app. So, from within the
+root directory run the following commands:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ cd example
+$ cork run
+</pre></div>
+</div>
+<p>Once you run this you should have a container <code class="docutils literal"><span class="pre">example-container</span></code> in docker.</p>
+</div>
+<div class="section" id="step-12-run-the-express-app">
+<span id="step-12-run-the-express-app"></span><h2>Step 12: Run the express app<a class="headerlink" href="#step-12-run-the-express-app" title="Permalink to this headline">¶</a></h2>
+<p>To run the docker container simply do this:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ docker run -it --rm -p 9000:9000 example-container
+</pre></div>
+</div>
 </div>
 </div>
 
@@ -232,6 +290,7 @@ to use this.</p>
   <h3><a href="../index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Quick Start Guide</a><ul>
+<li><a class="reference internal" href="#before-we-begin">Before we begin</a></li>
 <li><a class="reference internal" href="#step-1-create-a-new-directory-for-your-cork-server">Step 1: Create a new directory for your cork server</a></li>
 <li><a class="reference internal" href="#step-2-create-the-scaffolding-for-the-project">Step 2: Create the scaffolding for the project</a></li>
 <li><a class="reference internal" href="#step-3-create-the-dockerfile-for-the-cork-server">Step 3: Create the Dockerfile for the cork server</a></li>
@@ -240,8 +299,10 @@ to use this.</p>
 <li><a class="reference internal" href="#step-6-build-your-first-cork-server">Step 6: Build your first cork server</a></li>
 <li><a class="reference internal" href="#step-7-run-your-hello-world-cork-server">Step 7: Run your hello world cork server</a></li>
 <li><a class="reference internal" href="#step-8-making-the-build-stage-useful">Step 8: Making the build stage useful</a></li>
-<li><a class="reference internal" href="#step-9-making-an-example-node-project-to-test-with">Step 9: Making an example node project to test with</a></li>
-<li><a class="reference internal" href="#step-10">Step 10:</a></li>
+<li><a class="reference internal" href="#step-9-create-a-simple-express-app-to-test-with">Step 9: Create a simple express app to test with</a></li>
+<li><a class="reference internal" href="#step-10-rebuild-your-cork-server">Step 10: Rebuild your cork server</a></li>
+<li><a class="reference internal" href="#step-11-test-your-cork-server-on-your-express-app">Step 11: Test your cork server on your express app</a></li>
+<li><a class="reference internal" href="#step-12-run-the-express-app">Step 12: Run the express app</a></li>
 </ul>
 </li>
 </ul>

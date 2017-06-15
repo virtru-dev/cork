@@ -8,6 +8,13 @@ quick start example we will create a basic cork server to handle a very
 simple node.js project. This guide assumes you have some knowledge of bash
 and docker, but you shouldn't need all that much knowledge.
 
+## Before we begin
+
+Before using cork on your local system it's best to setup your ssh agent with
+your private key. On some kind of automated server you may have a different
+way to handle this, but on a local system the ssh-agent is by far the most
+useful.
+
 ## Step 1: Create a new directory for your cork server
 
 Feel free to name this directory anything you'd like, but for this tutorial
@@ -22,21 +29,28 @@ $ mkdir practice-project
 There is work to making this easier but at the moment do all of the following
 to get the proper scaffolding:
 
-    $ cd practice-project # cd into your project
-    $ mkdir -p cork/commands
-    $ mkdir -p cork/hooks
+```
+$ cd practice-project # cd into your project
+$ mkdir -p cork/commands
+$ mkdir -p cork/hooks
+```
+
+The last piece of scaffolding is a `cork.yml` file that will tell cork that
+you'd like to use the `cork-server-project` as the cork server for this
+project.
+
+This file looks like this:
+
+```yaml
+type: virtru/cork-server-project:latest
+```
 
 ## Step 3: Create the Dockerfile for the cork server
 
 In the root of your `practice-project` make the following `Dockerfile`:
 
 ```
-FROM virtru/base-cork-server:xenial
-
-RUN curl -sL https://deb.nodesource.com/setup_6.x | bash - && \
-    apt-get update && \
-    apt-get install -y nodejs && \
-    npm install -g npm
+FROM virtru/common-cork-server:xenial
 ```
 
 You will notice we are basing this docker container off of the
@@ -72,7 +86,7 @@ stage, the `build` stage.
 
 Do that by creating a file `cork/definition.yml` with this data:
 
-```
+```yaml
 # The version is required
 version: 1
 
@@ -148,13 +162,36 @@ a node project and package it into a docker container.
 
 Change your `cork/commands/build` script like so:
 
-```
+```bash
 #!/bin/bash
 
-npm install
+docker build -t ${CORK_PROJECT_NAME}-container .
+
+echo "Created a container ${CORK_PROJECT_NAME}-container
 ```
 
-## Step 9: Making an example node project to test with
+And add a dockerfile like so:
+
+```
+FROM ubuntu:xenial
+
+ENV PORT=9000
+EXPOSE 9000
+
+RUN curl -sL https://deb.nodesource.com/setup_6.x | bash - && \
+    apt-get update && \
+    apt-get install -y nodejs && \
+    npm install -g npm && \
+    mkdir /app
+
+WORKDIR /app
+
+COPY package.json /app/package.json
+RUN npm install
+COPY index.js /app/index.js
+```
+
+## Step 9: Create a simple express app to test with
 
 Before we can try to use this cork server let's setup a simple node project
 to use this.
@@ -181,9 +218,9 @@ Next create an `example/package.json` file:
 }
 ```
 
-Finally, create a script for the project at `example/index.js`:
+Next, create a script for the project at `example/index.js`:
 
-```
+```javascript
 const express = require('express')
 const app = express()
 
@@ -196,4 +233,40 @@ app.listen(process.env.PORT, function () {
 })
 ```
 
-## Step 10: 
+Finally, to tie it all together we use a `cork.yml` file that will be used to
+tell cork that you'd like to use your `practice-project` cork server with
+this example project. 
+
+This file, at `example/cork.yml`, should look like this:
+
+```yaml
+type: practice-project:latest
+```
+
+## Step 10: Rebuild your cork server
+
+From within the root directory run the following:
+
+```
+$ cork run
+```
+
+## Step 11: Test your cork server on your express app
+
+Now let's build the docker container for our express app. So, from within the
+root directory run the following commands:
+
+```
+$ cd example
+$ cork run
+```
+
+Once you run this you should have a container `example-container` in docker.
+
+## Step 12: Run the express app
+
+To run the docker container simply do this: 
+
+```
+$ docker run -it --rm -p 9000:9000 example-container
+```
