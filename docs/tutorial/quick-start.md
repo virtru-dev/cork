@@ -1,9 +1,4 @@
-+++
-categories = ["tutorial"]
-weight = 20
-title = "Quick Start"
-
-+++
+# Quick Start Guide
 
 This quick start guide will walk you through creating your first cork server.
 You don't need to know the nitty gritty details yet, but the cork server is

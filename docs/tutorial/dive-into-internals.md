@@ -1,9 +1,4 @@
-+++
-categories = ["tutorial"]
-weight = 30
-title = "Anatomy of a cork server"
-
-+++
+# Dive into the internals
 
 ## A crash course in Cork internals
 

@@ -1,8 +1,4 @@
----
-title: Cork
-menu: main
-weight: -270
----
+# cork - the most reliable build tool ever conceived (probably)
 
 cork is a build tool for projects that utilizes containerization to achieve
 highly reliable and highly portable build workflows. cork is the tool you
@@ -20,3 +16,22 @@ Dream no more. Cork is here.
 Cork is powered by docker and runs anywhere docker runs. If it works on Linux,
 it will work on Windows and OS X.
 
+## Getting started
+
+```eval_rst
+.. toctree::
+   :maxdepth: 2
+
+   tutorial/installing
+   tutorial/quick-start
+   tutorial/dive-into-internals
+```
+
+## Indices and tables
+
+```eval_rst
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`
+```

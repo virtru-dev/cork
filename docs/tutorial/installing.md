@@ -1,9 +1,4 @@
-+++
-categories = ["tutorial"]
-weight = 0
-title = "Installing Cork"
-
-+++
+# Installing Cork
 
 ## Before you install
 
