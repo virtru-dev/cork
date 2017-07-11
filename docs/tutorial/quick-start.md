@@ -33,6 +33,8 @@ to get the proper scaffolding:
 $ cd practice-project # cd into your project
 $ mkdir -p cork/commands
 $ mkdir -p cork/hooks
+$ echo "#!/bin/bash" > cork-server-setup
+$ chmod +x cork-server-setup
 ```
 
 The last piece of scaffolding is a `cork.yml` file that will tell cork that
@@ -45,6 +47,19 @@ This file looks like this:
 type: virtru/cork-server-project:latest
 ```
 
+Once you're done with this step your directory structure should look like
+this:
+
+```
+practice-project/
+ |-cork.yml
+ |-cork-server-setup
+ |-cork/
+ |  |-commands/
+ |  |  |-build
+ |  |-hooks/
+```
+
 ## Step 3: Create the Dockerfile for the cork server
 
 In the root of your `practice-project` make the following `Dockerfile`:
@@ -54,7 +69,7 @@ FROM virtru/common-cork-server:xenial
 ```
 
 You will notice we are basing this docker container off of the
-`virtru/base-cork-server:xenial` container. This container will automatically
+`virtru/common-cork-server:xenial` container. This container will automatically
 copy the `cork` directory into the correct place for the cork server. 
 
 ## Step 4: Create a build script
@@ -149,7 +164,7 @@ Successfully built 444444444444
 Hello, world!
 
 Cork is done!
-Find your outputs: /Users/raven/development/virtru/practice-project/outputs.json
+Find your outputs: /Users/foo/development/virtru/practice-project/outputs.json
 ```
 
 Obviously, you want cork to do much more than this, so let's move on to the
@@ -158,7 +173,9 @@ next step.
 ## Step 8: Making the build stage useful
 
 Ok let's do something interesting with the build stage and use it to install
-a node project and package it into a docker container.
+a node project and package it into a docker container. We're going to put a
+test node project into the `example/` sub-directory of the `practice-project`
+root directory.
 
 Change your `cork/commands/build` script like so:
 
@@ -170,7 +187,15 @@ docker build -t ${CORK_PROJECT_NAME}-container .
 echo "Created a container ${CORK_PROJECT_NAME}-container
 ```
 
-And add a dockerfile like so:
+## Step 9: Start your example project
+
+To start the example project. Create the `example` sub-directory
+
+```
+$ mkdir -p example
+```
+
+Add a dockerfile like so at `example/Dockerfile`:
 
 ```
 FROM ubuntu:xenial
@@ -193,16 +218,7 @@ COPY index.js /app/index.js
 
 ## Step 9: Create a simple express app to test with
 
-Before we can try to use this cork server let's setup a simple node project
-to use this.
-
-First setup the example project scaffolding (from the root of the `practice-project`):
-
-```
-$ mkdir -p example
-```
-
-Next create an `example/package.json` file:
+Create an `example/package.json` file:
 
 ```
 {
@@ -270,3 +286,5 @@ To run the docker container simply do this:
 ```
 $ docker run -it --rm -p 9000:9000 example-container
 ```
+
+You can now visit http://127.0.0.1:9000
