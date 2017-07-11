@@ -74,6 +74,8 @@ to get the proper scaffolding:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span>$ cd practice-project # cd into your project
 $ mkdir -p cork/commands
 $ mkdir -p cork/hooks
+$ echo &quot;#!/bin/bash&quot; &gt; cork-server-setup
+$ chmod +x cork-server-setup
 </pre></div>
 </div>
 <p>The last piece of scaffolding is a <code class="docutils literal"><span class="pre">cork.yml</span></code> file that will tell cork that
@@ -81,6 +83,17 @@ you'd like to use the <code class="docutils literal"><span class="pre">cork-serv
 project.</p>
 <p>This file looks like this:</p>
 <div class="highlight-yaml"><div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">type</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">virtru/cork-server-project:latest</span>
+</pre></div>
+</div>
+<p>Once you're done with this step your directory structure should look like
+this:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">practice</span><span class="o">-</span><span class="n">project</span><span class="o">/</span>
+ <span class="o">|-</span><span class="n">cork</span><span class="o">.</span><span class="n">yml</span>
+ <span class="o">|-</span><span class="n">cork</span><span class="o">-</span><span class="n">server</span><span class="o">-</span><span class="n">setup</span>
+ <span class="o">|-</span><span class="n">cork</span><span class="o">/</span>
+ <span class="o">|</span>  <span class="o">|-</span><span class="n">commands</span><span class="o">/</span>
+ <span class="o">|</span>  <span class="o">|</span>  <span class="o">|-</span><span class="n">build</span>
+ <span class="o">|</span>  <span class="o">|-</span><span class="n">hooks</span><span class="o">/</span>
 </pre></div>
 </div>
 </div>
@@ -91,7 +104,7 @@ project.</p>
 </pre></div>
 </div>
 <p>You will notice we are basing this docker container off of the
-<code class="docutils literal"><span class="pre">virtru/base-cork-server:xenial</span></code> container. This container will automatically
+<code class="docutils literal"><span class="pre">virtru/common-cork-server:xenial</span></code> container. This container will automatically
 copy the <code class="docutils literal"><span class="pre">cork</span></code> directory into the correct place for the cork server.</p>
 </div>
 <div class="section" id="step-4-create-a-build-script">
@@ -174,7 +187,7 @@ Successfully built 444444444444
 Hello, world!
 
 Cork is done!
-Find your outputs: /Users/raven/development/virtru/practice-project/outputs.json
+Find your outputs: /Users/foo/development/virtru/practice-project/outputs.json
 </pre></div>
 </div>
 <p>Obviously, you want cork to do much more than this, so let's move on to the
@@ -183,7 +196,9 @@ next step.</p>
 <div class="section" id="step-8-making-the-build-stage-useful">
 <span id="step-8-making-the-build-stage-useful"></span><h2>Step 8: Making the build stage useful<a class="headerlink" href="#step-8-making-the-build-stage-useful" title="Permalink to this headline">¶</a></h2>
 <p>Ok let's do something interesting with the build stage and use it to install
-a node project and package it into a docker container.</p>
+a node project and package it into a docker container. We're going to put a
+test node project into the <code class="docutils literal"><span class="pre">example/</span></code> sub-directory of the <code class="docutils literal"><span class="pre">practice-project</span></code>
+root directory.</p>
 <p>Change your <code class="docutils literal"><span class="pre">cork/commands/build</span></code> script like so:</p>
 <div class="highlight-bash"><div class="highlight"><pre><span></span><span class="ch">#!/bin/bash</span>
 
@@ -192,7 +207,14 @@ docker build -t <span class="si">${</span><span class="nv">CORK_PROJECT_NAME</sp
 <span class="nb">echo</span> <span class="s2">&quot;Created a container </span><span class="si">${</span><span class="nv">CORK_PROJECT_NAME</span><span class="si">}</span><span class="s2">-container</span>
 </pre></div>
 </div>
-<p>And add a dockerfile like so:</p>
+</div>
+<div class="section" id="step-9-start-your-example-project">
+<span id="step-9-start-your-example-project"></span><h2>Step 9: Start your example project<a class="headerlink" href="#step-9-start-your-example-project" title="Permalink to this headline">¶</a></h2>
+<p>To start the example project. Create the <code class="docutils literal"><span class="pre">example</span></code> sub-directory</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ mkdir -p example
+</pre></div>
+</div>
+<p>Add a dockerfile like so at <code class="docutils literal"><span class="pre">example/Dockerfile</span></code>:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">FROM</span> <span class="n">ubuntu</span><span class="p">:</span><span class="n">xenial</span>
 
 <span class="n">ENV</span> <span class="n">PORT</span><span class="o">=</span><span class="mi">9000</span>
@@ -214,13 +236,7 @@ docker build -t <span class="si">${</span><span class="nv">CORK_PROJECT_NAME</sp
 </div>
 <div class="section" id="step-9-create-a-simple-express-app-to-test-with">
 <span id="step-9-create-a-simple-express-app-to-test-with"></span><h2>Step 9: Create a simple express app to test with<a class="headerlink" href="#step-9-create-a-simple-express-app-to-test-with" title="Permalink to this headline">¶</a></h2>
-<p>Before we can try to use this cork server let's setup a simple node project
-to use this.</p>
-<p>First setup the example project scaffolding (from the root of the <code class="docutils literal"><span class="pre">practice-project</span></code>):</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ mkdir -p example
-</pre></div>
-</div>
-<p>Next create an <code class="docutils literal"><span class="pre">example/package.json</span></code> file:</p>
+<p>Create an <code class="docutils literal"><span class="pre">example/package.json</span></code> file:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">{</span>
   <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;example&quot;</span><span class="p">,</span>
   <span class="s2">&quot;version&quot;</span><span class="p">:</span> <span class="s2">&quot;1.0.0&quot;</span><span class="p">,</span>
@@ -278,6 +294,7 @@ $ cork run
 <div class="highlight-default"><div class="highlight"><pre><span></span>$ docker run -it --rm -p 9000:9000 example-container
 </pre></div>
 </div>
+<p>You can now visit http://127.0.0.1:9000</p>
 </div>
 </div>
 
@@ -299,6 +316,7 @@ $ cork run
 <li><a class="reference internal" href="#step-6-build-your-first-cork-server">Step 6: Build your first cork server</a></li>
 <li><a class="reference internal" href="#step-7-run-your-hello-world-cork-server">Step 7: Run your hello world cork server</a></li>
 <li><a class="reference internal" href="#step-8-making-the-build-stage-useful">Step 8: Making the build stage useful</a></li>
+<li><a class="reference internal" href="#step-9-start-your-example-project">Step 9: Start your example project</a></li>
 <li><a class="reference internal" href="#step-9-create-a-simple-express-app-to-test-with">Step 9: Create a simple express app to test with</a></li>
 <li><a class="reference internal" href="#step-10-rebuild-your-cork-server">Step 10: Rebuild your cork server</a></li>
 <li><a class="reference internal" href="#step-11-test-your-cork-server-on-your-express-app">Step 11: Test your cork server on your express app</a></li>

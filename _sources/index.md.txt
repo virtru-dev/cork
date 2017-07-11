@@ -26,12 +26,3 @@ it will work on Windows and OS X.
    tutorial/quick-start
    tutorial/dive-into-internals
 ```
-
-## Indices and tables
-
-```eval_rst
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
-```
