@@ -1,0 +1,42 @@
+// Colors
+$cork-blue: #3B69C3;
+$cork-purple: #9346A5;
+$dark-purple: #582E77;
+
+$white: white;
+
+
+
+// Font Families
+$cork-display-font-family: 'Titillium Web', Helvetica, Arial, sans-serif;
+
+$cork-body-font-family: 'Open Sans', Helvetica, Arial, sans-serif;
+
+$text-color: $white;
+
+
+/// Container's maximum width
+$max-width: 960px !default;
+
+// Grid properties
+$outer-gutter: 0px 32px;
+$main-grid-column-count: repeat(9, 1fr);
+$grid-column-gutter: 16px;
+
+$full-column-span: 1 / span 9;
+
+
+
+
+
+
+
+
+
+/// Relative or absolute URL where all assets are served from
+/// @type String
+/// @example scss - When using a CDN
+///   $base-url: 'http://cdn.example.com/assets/';
+$base-url: '/assets/' !default;
+
+$easing-curve: cubic-bezier(0.86, 0, 0.07, 1);

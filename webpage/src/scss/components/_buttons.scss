@@ -1,0 +1,34 @@
+$button-color: $dark-purple;
+$button-padding: 0.7em 2.4em;
+$button-border-radius: 6px;
+$button-box-shadow: 0px 0px 0px rgba(255, 255, 255, 0.16);
+
+.general-button{
+  display: inline-block;
+  padding: $button-padding;
+  background-color: $button-color;
+  box-shadow: $button-box-shadow;
+  border-radius: $button-border-radius;
+  color: $text-color;
+  transition: 250ms;
+  @include type-setting-display(1, 'bold');
+  &:hover, &:focus {
+    box-shadow: 0 0.5em 0.5em -0.4em rgba(255, 255, 255, 0.16);
+    transform: translateY(-0.25em)
+  }
+}
+
+.text-with-hover{
+  display: inline-block;
+  padding: $button-padding;
+  border-radius: $button-border-radius;
+  background-color: rgba(255, 255, 255, 0);
+  color: $text-color;
+  transition: all 240ms $easing-curve;
+
+  &:hover{
+    transition: all 240ms $easing-curve;
+    background-color: rgba(255, 255, 255, 0.15);
+    text-decoration: none;
+  }
+}

@@ -1,0 +1,44 @@
+$logo-width: 100px;
+$logo-height: 53px;
+
+
+header {
+  grid-row: 1;
+  grid-column: $full-column-span;
+  padding-top: 2em;
+}
+
+nav {
+  display: grid;
+  grid-template-columns: $main-grid-column-count;
+  grid-gap: $grid-column-gutter;
+}
+
+.logo-container {
+  grid-column: 1;
+  svg{
+    width: $logo-width;
+    height: $logo-height;
+    opacity: 1;
+    transition: all 240ms $easing-curve;
+
+    &:hover{
+      opacity: 0.6;
+      transform: scale(1.05) translateY(-0.25em);
+      transition: all 240ms $easing-curve;
+    }
+  }
+}
+
+.logo {
+  width: $logo-width;
+  height: $logo-height;
+}
+
+
+.nav-item{
+  justify-self: end;
+  align-self: end;
+  grid-column: 2 / span 8;
+  text-decoration: underline;
+}/**/
