@@ -5,7 +5,7 @@ $logo-height: 53px;
 header {
   grid-row: 1;
   grid-column: $full-column-span;
-  padding-top: 2em;
+  padding-top: 1em;
 }
 
 nav {
@@ -20,13 +20,9 @@ nav {
     width: $logo-width;
     height: $logo-height;
     opacity: 1;
-    transition: all 240ms $easing-curve;
+    transition: all 400ms $easing-curve;
 
-    &:hover{
-      opacity: 0.6;
-      transform: scale(1.05) translateY(-0.25em);
-      transition: all 240ms $easing-curve;
-    }
+    @include button-hover(rgba(255, 255, 255, 0));
   }
 }
 

@@ -63,3 +63,13 @@
         @content;
     }
 }
+
+// button mixins
+@mixin button-hover($btn-hover-color){
+  &:hover, &:focus {
+    box-shadow: $button-box-shadow-hover;
+    transform: $button-hover-height;
+    background-color: $btn-hover-color;
+    text-decoration: none;
+  }
+}
