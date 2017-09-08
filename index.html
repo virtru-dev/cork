@@ -1,153 +1,70 @@
-
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
     <title>cork - the most reliable build tool ever conceived (probably) &#8212; cork 0.1.0 documentation</title>
     
-    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
-    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    './',
-        VERSION:     '0.1.0',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
-    <script type="text/javascript" src="_static/jquery.js"></script>
-    <script type="text/javascript" src="_static/underscore.js"></script>
-    <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Installing Cork" href="tutorial/installing.html" />
-   
-  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
-  
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
-
+    <link rel="stylesheet" type="text/css" href="css/main.css">
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans|Titillium+Web:300,400,700,900" rel="stylesheet">
   </head>
   <body>
-  
-
-    <div class="document">
-      <div class="documentwrapper">
-        <div class="bodywrapper">
-          <div class="body" role="main">
-            
-  <div class="section" id="cork-the-most-reliable-build-tool-ever-conceived-probably">
-<span id="cork-the-most-reliable-build-tool-ever-conceived-probably"></span><h1>cork - the most reliable build tool ever conceived (probably)<a class="headerlink" href="#cork-the-most-reliable-build-tool-ever-conceived-probably" title="Permalink to this headline">¶</a></h1>
-<p>cork is a build tool for projects that utilizes containerization to achieve
-highly reliable and highly portable build workflows. cork is the tool you
-always wanted but didn't know how to describe.</p>
-<p>Have you ever had to spin up a build agent for your CI tool and needed to build
-node-v4 projects and node-v6? If so, you've run in to issues with tools
-conflicting. It's possible to make it work, but why not save yourself the
-headache of having to deal with build agents. Imagine if you could make it so
-the exact same tool used in CI to build/test was the tool you used on your
-local development machine.</p>
-<p>Dream no more. Cork is here.</p>
-<p>Cork is powered by docker and runs anywhere docker runs. If it works on Linux,
-it will work on Windows and OS X.</p>
-<div class="section" id="getting-started">
-<span id="getting-started"></span><h2>Getting started<a class="headerlink" href="#getting-started" title="Permalink to this headline">¶</a></h2>
-<div class="toctree-wrapper compound">
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="tutorial/installing.html">Installing Cork</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="tutorial/installing.html#before-you-install">Before you install</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tutorial/installing.html#install-from-binary">Install from binary</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tutorial/installing.html#installing-from-source">Installing from source</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="tutorial/quick-start.html">Quick Start Guide</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="tutorial/quick-start.html#before-we-begin">Before we begin</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tutorial/quick-start.html#step-1-create-a-new-directory-for-your-cork-server">Step 1: Create a new directory for your cork server</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tutorial/quick-start.html#step-2-create-the-scaffolding-for-the-project">Step 2: Create the scaffolding for the project</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tutorial/quick-start.html#step-3-create-the-dockerfile-for-the-cork-server">Step 3: Create the Dockerfile for the cork server</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tutorial/quick-start.html#step-4-create-a-build-script">Step 4: Create a build script</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tutorial/quick-start.html#step-5-create-a-definition-yml-to-define-your-build-workflow">Step 5: Create a definition.yml to define your build workflow</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tutorial/quick-start.html#step-6-build-your-first-cork-server">Step 6: Build your first cork server</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tutorial/quick-start.html#step-7-run-your-hello-world-cork-server">Step 7: Run your hello world cork server</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tutorial/quick-start.html#step-8-making-the-build-stage-useful">Step 8: Making the build stage useful</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tutorial/quick-start.html#step-9-start-your-example-project">Step 9: Start your example project</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tutorial/quick-start.html#step-9-create-a-simple-express-app-to-test-with">Step 9: Create a simple express app to test with</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tutorial/quick-start.html#step-10-rebuild-your-cork-server">Step 10: Rebuild your cork server</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tutorial/quick-start.html#step-11-test-your-cork-server-on-your-express-app">Step 11: Test your cork server on your express app</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tutorial/quick-start.html#step-12-run-the-express-app">Step 12: Run the express app</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="tutorial/dive-into-internals.html">Dive into the internals</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="tutorial/dive-into-internals.html#a-crash-course-in-cork-internals">A crash course in Cork internals</a></li>
-</ul>
-</li>
-</ul>
-</div>
-</div>
-</div>
-
-
+    <div class="grid-wrapper">
+      <header>
+        <nav>
+          <a href="#" class="logo-container fade-in first">
+            <svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" width="447" height="240" viewBox="0 0 447 240"><title>logo 02</title><path d="M58,117a154,154,0,0,1,35,5h6l-2,41-32-2q-8,0-11,4t-3,13,3,13,10,3l33-2,2,41a152,152,0,0,1-42,6q-33,0-46-14T0,178q0-34,13-48T58,117Z" fill="#fff"/><path d="M122,132q15-14,46-14t46,14q15,14,15,47t-15,47q-15,14-46,14t-46-14q-15-14-15-47T122,132Z" fill="#fff"/><path d="M292,237H240V120h52v11q15-14,25-14v48q-8,0-20,6l-4,2Z" fill="#fff"/><path d="M377,237H325V0h52V154h7l10-34h51l-17,57,18,60H395l-11-34h-7Z" fill="#fff"/></svg>
+          </a>
+          
+        </nav>
+      </header>
+      <main>
+        <section>
+          <div class="upsell-text">
+            <h1 class="title-text fade-in first">The most reliable build tool ever conceived <span>(maybe)</span></h1>
+            <p class="fade-in second">Ever spun up a build agent for your CI tool, needed to build node-v4 and node-v6 projects, then run into issues with tools conflicting? Getting everything to play well together can be a hassle. 
+            <br /><br />
+            Hassle no more. Cork is here.</p>
+            <a href="sphinx_docs/index.html" class="general-button fade-in third">Get CORK</a>
           </div>
-        </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-  <h3><a href="#">Table Of Contents</a></h3>
-  <ul>
-<li><a class="reference internal" href="#">cork - the most reliable build tool ever conceived (probably)</a><ul>
-<li><a class="reference internal" href="#getting-started">Getting started</a></li>
-</ul>
-</li>
-</ul>
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="#">Documentation overview</a><ul>
-      <li>Next: <a href="tutorial/installing.html" title="next chapter">Installing Cork</a></li>
-  </ul></li>
-</ul>
-</div>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="_sources/index.md.txt"
-            rel="nofollow">Show Source</a></li>
-    </ul>
-   </div>
-<div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
-    <form class="search" action="search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
-</div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
-        </div>
-      </div>
-      <div class="clearer"></div>
+          <div class="iso-art">
+            <div class="art-boat fade-in first">
+              <img src="images/boat.svg">
+              <div class="shadow"></div>
+            </div>
+            <div class="art-train fade-in second">
+              <img src="images/train.svg" class="test">
+              <div class="shadow"></div>
+            </div>
+            <div class="art-truck fade-in third">
+              <img src="images/truck.svg">
+              <div class="shadow"></div>
+            </div>
+          </div>
+        </section>
+        <section>
+          
+            
+            <div class="last-cta fade-in fourth">
+              <img src="images/shipping_container.svg">
+              
+            </div>
+            <ul class="main-points fade-in fourth">
+              <li>Same tool for CI build/test as local environment</li>
+              <li>Reliable, portable build workflows using containerization</li>
+              <li>Powered by docker and runs anywhere docker runs</li>
+              <li><a href="sphinx_docs/index.html" class="general-button">Get CORK</a></li>
+            </ul>
+            
+          
+        </section>
+      </main>
+      <footer>
+        <ul>
+          <li><a href="https://github.com/virtru"><img src="images/github.svg" alt="github"></a></li>
+          <li><a href="https://twitter.com/virtruprivacy"><img src="images/twitter.svg" alt="twitter"></a></li>
+          <li><a href="https://www.virtru.com/careers/#openings">We're hiring!</a></li>
+        </ul>
+      </footer>
     </div>
-    <div class="footer">
-      &copy;2017, Virtru Corporation.
-      
-      |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.2</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
-      
-      |
-      <a href="_sources/index.md.txt"
-          rel="nofollow">Page source</a>
-    </div>
-
-    
-
-    
   </body>
 </html>
