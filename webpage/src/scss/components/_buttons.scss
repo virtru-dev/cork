@@ -1,0 +1,33 @@
+.general-button{
+  display: inline-block;
+  padding: $button-padding;
+  background-color: $button-color;
+  //box-shadow: $button-box-shadow;
+  border-radius: $button-border-radius;
+  color: $text-color;
+  transition: $button-transition;
+  margin-right: 0.5em;
+  margin-bottom: 1em;
+  @include type-setting-display(1, 'bold');
+  @include button-hover($dark-purple-hover);
+
+
+  @media (max-width: $tablet-width){
+      font-size: 1em;
+    }
+}
+
+.text-with-hover{
+  display: inline-block;
+  padding: $button-padding;
+  border-radius: $button-border-radius;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: $text-color;
+  transition: $button-transition;
+  text-decoration: none !important;
+  @include type-setting-display(1, 'regular');
+  @include button-hover(rgba(255, 255, 255, 0.3));
+  @media (max-width: $tablet-width){
+      font-size: 1em;
+    }
+}

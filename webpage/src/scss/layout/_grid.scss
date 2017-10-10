@@ -1,0 +1,18 @@
+// Background styling
+$background-styling: linear-gradient(to bottom right, $cork-blue, $cork-purple);
+
+body { 
+  margin: 0; 
+  background: $background-styling; 
+  display: flex;
+  justify-content: center;
+  padding: $outer-gutter;
+  overflow-x: hidden;
+}
+
+.grid-wrapper{
+  display: grid;
+  max-width: $max-width;
+  grid-template-columns: $main-grid-column-count;
+  grid-gap: $grid-column-gutter; 
+}

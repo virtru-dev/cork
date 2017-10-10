@@ -1,0 +1,40 @@
+$logo-width: 100px;
+$logo-height: 53px;
+
+
+header {
+  grid-row: 1;
+  grid-column: $full-column-span;
+  padding-top: 1em;
+}
+
+nav {
+  display: grid;
+  grid-template-columns: $main-grid-column-count;
+  grid-gap: $grid-column-gutter;
+}
+
+.logo-container {
+  grid-column: 1;
+  svg{
+    width: $logo-width;
+    height: $logo-height;
+    opacity: 1;
+    transition: all 400ms $easing-curve;
+
+    @include button-hover(rgba(255, 255, 255, 0));
+  }
+}
+
+.logo {
+  width: $logo-width;
+  height: $logo-height;
+}
+
+
+.nav-item{
+  justify-self: end;
+  align-self: end;
+  grid-column: 2 / span 8;
+  text-decoration: underline;
+}/**/

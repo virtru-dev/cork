@@ -1,0 +1,57 @@
+// Colors
+$cork-blue: #3B69C3;
+$cork-purple: #9346A5;
+$dark-purple-hover: #9E4BB2;
+$dark-purple: #582E77;
+
+$white: white;
+
+
+
+// Font Families
+$cork-display-font-family: 'Titillium Web', Helvetica, Arial, sans-serif;
+
+$cork-body-font-family: 'Open Sans', Helvetica, Arial, sans-serif;
+
+$text-color: $white;
+
+
+/// Container's maximum width
+$max-width: 960px !default;
+
+// Grid properties
+$outer-gutter: 0px 32px;
+$main-grid-column-count: repeat(9, 1fr);
+$grid-column-gutter: 16px;
+
+$full-column-span: 1 / span 9;
+
+
+/// responsive breakpoints
+$mobile-width: 32.5em; //520px; 
+$mobile-large-width: 41.25em; //660px;
+$tablet-width: 47.5em; //760px;
+
+
+
+
+
+
+
+/// Relative or absolute URL where all assets are served from
+/// @type String
+/// @example scss - When using a CDN
+///   $base-url: 'http://cdn.example.com/assets/';
+$base-url: '/assets/' !default;
+
+$easing-curve: cubic-bezier(0.86, 0, 0.07, 1);
+
+
+
+// button values
+$button-color: $dark-purple;
+$button-padding: 0.7em 2.4em;
+$button-border-radius: 26px;
+$button-box-shadow-hover: 0 1em 0.2em -0.5em rgba(0, 0, 0, 0.16);
+$button-hover-height: translateY(0.25em);
+$button-transition: all 400ms ease;

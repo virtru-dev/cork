@@ -1,0 +1,80 @@
+$type-weight: (
+  'light': 300,
+  'regular': 400,
+  'bold': 700,
+  'black': 900
+);
+
+@function type-weight($key: 'regular'){
+  @return map-get($type-weight, $key);
+}
+
+//typographic scale - perfect fourth - ratio 1.333
+$type-scale: (
+  -1: 0.75em,  // small text
+  0: 1em,      // body text
+  1: 1.333em,  // large text
+  2: 1.777em,   // main heading
+  3: 2.369em,
+  4: 3.157em
+);
+
+@function type-scale($level) {
+  @return map-get($type-scale, $level);
+}
+
+// Vertical Rhythm, baseline grid
+$base-font-size: 1em;
+$base-line-height-body: $base-font-size * 1.55;
+$base-line-height-display: $base-font-size * 1.15;
+
+$line-heights-body: (
+  -1: $base-line-height-body,
+  0: $base-line-height-body,
+  1: $base-line-height-body,
+  2: $base-line-height-body * 2,
+  3: $base-line-height-body * 2,
+  4: $base-line-height-body * 2
+);
+
+$line-heights-display: (
+  -1: $base-line-height-display,
+  0: $base-line-height-display,
+  1: $base-line-height-display,
+  2: $base-line-height-display,
+  3: $base-line-height-display,
+  4: $base-line-height-display
+);
+
+@function line-height-body($level: 0) {
+  @return map-get($line-heights-body, $level);
+}
+
+@function line-height-display($level: 0) {
+  @return map-get($line-heights-display, $level);
+}
+
+@mixin type-setting-body($level: 0, $key: 'regular') {
+  font-size: type-scale($level);
+  line-height: line-height-body($level);
+  font-weight: type-weight($key);
+}
+
+@mixin type-setting-display($level: 0, $key: 'regular') {
+  font-size: type-scale($level);
+  line-height: line-height-display($level);
+  font-weight: type-weight($key);
+}
+
+body {
+  font-family: $cork-body-font-family;
+  color: $text-color;
+}
+
+h1, h2, h3, h4, h5, .general-button {
+  font-family: $cork-display-font-family;
+}
+
+p {
+  @include type-setting-body(0, 'regular');
+}
