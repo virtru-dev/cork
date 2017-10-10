@@ -1,0 +1,33 @@
+footer {
+  grid-row: 3;
+  grid-column: 1 / span 6;
+  ul{
+    display: flex;
+
+    li {
+      list-style: none;
+      text-align: center;
+      padding: 0px 16px 0px 0px;
+      img {
+        width: 24px;
+        height: 24px;
+      }
+      a {
+        font-style: italic;
+      }
+    }
+  }
+
+  &:before{
+    content: "";
+    position: absolute;
+    z-index: -1; /* behind parent */
+    //top: 0;
+    //bottom: 0;
+    /* subtract h2 padding (1.5rem) */
+    width: 100vw;
+    height: 6em; 
+    left: 0;
+    background-color: rgba(0,0,0, 0.15);
+    }
+}

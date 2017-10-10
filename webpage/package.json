@@ -1,0 +1,26 @@
+{
+  "name": "code",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "build-task:scss-compile": "node-sass-chokidar --source-map true src/scss/ -o dist/css --include-path ./node_modules/normalize-scss/sass",
+    "build-task:autoprefixer": "postcss dist/css/*.css --use autoprefixer -d dist/css",
+    "copy-images": "cpx 'src/images/*.{svg,png,jpg}' 'dist/images' -C",
+    "sass:build": "npm-run-all -p build-task:*",
+    "sass:watch": "chokidar 'src/scss/**/*.scss' -c 'npm run sass:build'",
+    "dev": "npm-run-all -p sass:* copy-images"
+  },
+  "author": "",
+  "license": "ISC",
+  "keywords": [],
+  "description": "",
+  "dependencies": {
+    "autoprefixer": "^7.1.2",
+    "chokidar-cli": "^1.2.0",
+    "cpx": "^1.5.0",
+    "node-sass-chokidar": "0.0.3",
+    "normalize-scss": "^7.0.0",
+    "npm-run-all": "^4.0.2",
+    "postcss-cli": "^4.1.0"
+  }
+}
