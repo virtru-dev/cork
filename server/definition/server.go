@@ -198,6 +198,14 @@ func (sd *ServerDefinition) walkSteps(stageName string) ([]string, error) {
 
 // Validate validates a definition file by running through the stages
 func (sd *ServerDefinition) Validate() error {
+	if sd.Version == 0 {
+		return fmt.Errorf("Invalid Definition: version must be specified")
+	}
+
+	if sd.Version != 1 {
+		return fmt.Errorf("Invalid Definition: only version 1 is support")
+	}
+
 	for stageName := range sd.Stages {
 		requiredUserParams, err := sd.walkSteps(stageName)
 		if err != nil {

@@ -37,3 +37,17 @@ func TestTemplateRenderConstants(t *testing.T) {
 		assert.Equal(t, "cacheDir", rendered3)
 	}
 }
+func TestTemplateRenderUserParams(t *testing.T) {
+	renderer := definition.NewTemplateRendererWithOptions(definition.CorkTemplateRendererOptions{
+		UserParams: map[string]string{
+			"one": "1",
+			"foo": "bar",
+		},
+	})
+	rendered1, err := renderer.Render(`{{ param "one" }}`)
+	rendered2, err := renderer.Render(`{{ param "foo" }}`)
+	if assert.NoError(t, err) {
+		assert.Equal(t, "1", rendered1)
+		assert.Equal(t, "bar", rendered2)
+	}
+}

@@ -7,10 +7,14 @@ import (
 
 	"github.com/virtru/cork/server/definition"
 
+	"strings"
+
 	"github.com/stretchr/testify/assert"
 )
 
 var good_definition_yml = `
+version: 1
+
 params:
   build_param:
     type: string
@@ -73,6 +77,8 @@ stages:
 `
 
 var circular_definition_yml = `
+version: 1
+
 stages:
   foo:
     - type: stage
@@ -91,6 +97,8 @@ stages:
 `
 
 var invalid_step_type = `
+version: 1
+
 stages:
   foo:
     - type: blah
@@ -152,11 +160,32 @@ stages:
           bar: '{{ param "bar" }}'
 `
 
+var no_version_definition_yml = `
+stages:
+  foo:
+    - name: foo
+      type: command
+`
+
+var wrong_version_definition_yml = `
+version: 2
+
+stages:
+  foo:
+    - name: foo
+      type: command
+`
+
 var bad_definitions_table = map[string]string{
 	"has circular dependencies": circular_definition_yml,
 	"has an invalid Step type":  invalid_step_type,
 	"has an unavailable Step":   unavailable_output_definition_yml,
 	"has an undefined param":    undefined_vars_definition_yml,
+}
+
+var bad_version_definitions_table = map[string]string{
+	"does not have a version": no_version_definition_yml,
+	"does not have version 1": wrong_version_definition_yml,
 }
 
 func TestGoodDefLoadFromString(t *testing.T) {
@@ -182,6 +211,20 @@ func TestGoodDefLoadFromString(t *testing.T) {
 func TestBadDefLoadFromString(t *testing.T) {
 	for failReason, badDefStr := range bad_definitions_table {
 		_, err := definition.LoadFromString(badDefStr)
+		if strings.Contains(err.Error(), "version") {
+			t.Errorf("Bad definition should not fail because of a bad version")
+		}
+		if err == nil {
+			t.Errorf("Definition should not successfully load because it %s", failReason)
+		}
+	}
+}
+func TestBadDefLoadFromStringForVersionCheck(t *testing.T) {
+	for failReason, badDefStr := range bad_version_definitions_table {
+		_, err := definition.LoadFromString(badDefStr)
+		if !strings.Contains(err.Error(), "version") {
+			t.Errorf("Bad definition should fail because of a bad version")
+		}
 		if err == nil {
 			t.Errorf("Definition should not successfully load because it %s", failReason)
 		}
