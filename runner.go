@@ -217,6 +217,7 @@ func (c *CorkTypeContainer) startSSHCommand(stageName string) error {
 		Failed:     failed,
 		SSHKeyPath: c.SSHKeyPath,
 	}
+	log.Debugf("ssh command options: %+v", sshCommandOptions)
 	command, err := NewDockerSSHCommand(sshCommandOptions)
 	if err != nil {
 		return err
@@ -224,6 +225,7 @@ func (c *CorkTypeContainer) startSSHCommand(stageName string) error {
 
 	log.Debugf("Running SSH with env %v", c.Env)
 	command.Start(c.Env)
+	defer command.CleanUp()
 	clientErrChan := make(chan error)
 
 	c.runClient(stageName, clientErrChan)
