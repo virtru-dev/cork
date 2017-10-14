@@ -72,6 +72,7 @@ var authHTTPRegex = regexp.MustCompile("^https?://")
 
 // NarrowAuthSearch - Narrows down auth search
 func NarrowAuthSearch(repo string, auths *docker.AuthConfigurations) []docker.AuthConfiguration {
+	log.Debugf("Searching for auth data")
 	var authConfigs []docker.AuthConfiguration
 	used := make(map[string]bool)
 
@@ -105,18 +106,25 @@ func NarrowAuthSearch(repo string, auths *docker.AuthConfigurations) []docker.Au
 
 // TryImagePull - Attempts to pull an image
 func TryImagePull(client *docker.Client, image string) error {
-	auths, err := docker.NewAuthConfigurationsFromDockerCfg()
-	if err != nil {
-		return err
-	}
-
+	log.Debugf("Trying to pull image: %s", image)
 	repo, tag := docker.ParseRepositoryTag(image)
 
-	authConfigs := NarrowAuthSearch(repo, auths)
+	auths, err := docker.NewAuthConfigurationsFromDockerCfg()
+	if err != nil {
+		log.Debugf("Cannot load docker config (this is not necessarily bad): %s", err.Error())
+	}
 
-	if len(authConfigs) == 0 {
+	var authConfigs []docker.AuthConfiguration
+	if auths == nil {
 		authConfigs = []docker.AuthConfiguration{
 			docker.AuthConfiguration{},
+		}
+	} else {
+		authConfigs = NarrowAuthSearch(repo, auths)
+		if len(authConfigs) == 0 {
+			authConfigs = []docker.AuthConfiguration{
+				docker.AuthConfiguration{},
+			}
 		}
 	}
 

@@ -28,7 +28,7 @@ import (
 
 type VolumeMap map[string]string
 
-var serverCommandTemplate = "/cork-server -e %s serve"
+var serverCommandTemplate = "/cork-server/cork-server -e %s serve"
 
 // CorkTypeContainer - Runs a cork job in a container
 type CorkTypeContainer struct {
@@ -250,6 +250,7 @@ func (c *CorkTypeContainer) Pwd() (string, error) {
 }
 
 func (c *CorkTypeContainer) createCommander() (*dockerutils.DockerCommander, error) {
+	log.Debugf("Starting docker commander")
 	pwd, err := c.Pwd()
 	if err != nil {
 		return nil, err

@@ -23,6 +23,6 @@ fi
 
 ssh-keyscan -t rsa github.com >> /root/.ssh/known_hosts
 
-/cork-server save-env
+/cork-server/cork-server save-env
 
 /usr/sbin/sshd -D
