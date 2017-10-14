@@ -8,7 +8,7 @@ import (
 
 	"regexp"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/fsouza/go-dockerclient"
 	"github.com/renstrom/fuzzysearch/fuzzy"

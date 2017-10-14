@@ -9,7 +9,7 @@ import (
 	"os"
 	"os/user"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/virtru/cork/client"
 	"google.golang.org/grpc"

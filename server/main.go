@@ -11,7 +11,7 @@ import (
 
 	"google.golang.org/grpc"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	pb "github.com/virtru/cork/protocol"
 	"github.com/virtru/cork/server/definition"
 	"github.com/virtru/cork/server/environment"

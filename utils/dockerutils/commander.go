@@ -8,11 +8,11 @@ import (
 
 	"io"
 
-	log "github.com/Sirupsen/logrus"
 	docker "github.com/fsouza/go-dockerclient"
 	"github.com/kballard/go-shellquote"
 	"github.com/renstrom/fuzzysearch/fuzzy"
 	uuid "github.com/satori/go.uuid"
+	log "github.com/sirupsen/logrus"
 )
 
 // DockerCommander - A high level docker interface

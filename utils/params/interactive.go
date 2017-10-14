@@ -3,7 +3,7 @@ package params
 import (
 	"fmt"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"github.com/fatih/color"
 	"github.com/segmentio/go-prompt"
 	pb "github.com/virtru/cork/protocol"

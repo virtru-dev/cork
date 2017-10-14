@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"strings"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	docker "github.com/fsouza/go-dockerclient"
 	"github.com/renstrom/fuzzysearch/fuzzy"
 	"github.com/virtru/cork/server/definition"

@@ -11,7 +11,7 @@ import (
 	"strings"
 	"syscall"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	docker "github.com/fsouza/go-dockerclient"
 	"github.com/satori/go.uuid"
 

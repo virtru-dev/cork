@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"github.com/fatih/color"
 	pb "github.com/virtru/cork/protocol"
 	"github.com/virtru/cork/server/definition"
