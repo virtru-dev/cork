@@ -6,6 +6,8 @@ import (
 	"os"
 	"path"
 
+	log "github.com/sirupsen/logrus"
+
 	"gopkg.in/yaml.v2"
 )
 
@@ -155,14 +157,19 @@ func (sd *ServerDefinition) walkSteps(stageName string) ([]string, error) {
 	usedStepNames := map[string]bool{}
 
 	for _, step := range steps {
+		log.Debugf("Walking... Stage: %s Step Name: %s\n", stageName, step.Name)
 		if step.Name != "" {
-			_, ok := usedStepNames[step.Name]
-			if ok {
+			used, _ := usedStepNames[step.Name]
+			if used {
 				return nil, fmt.Errorf(`Invalid Definition: step names must be unique in a stage. Step "%s" is not unique in stage "%s"`, step.Name, stageName)
 			}
 		}
+		usedStepNames[step.Name] = true
 
-		step.Args.ResolveArgs(renderer)
+		_, err := step.Args.ResolveArgs(renderer)
+		if err != nil {
+			return nil, err
+		}
 		requiredVarsForStep := renderer.ListRequiredVars()
 
 		for _, requiredVar := range requiredVarsForStep {
