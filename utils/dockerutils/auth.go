@@ -16,7 +16,6 @@ import (
 	"strings"
 
 	docker "github.com/fsouza/go-dockerclient"
-	log "github.com/sirupsen/logrus"
 )
 
 // dockerConfig represents a registry authentation configuration from the
@@ -82,7 +81,6 @@ func NewAuthConfigurations(r io.Reader) (*docker.AuthConfigurations, error) {
 	if err != nil {
 		return nil, err
 	}
-	log.Debugf("Docker Configs %+v", confs)
 	auth, err = authConfigs(confs)
 	if err != nil {
 		return nil, err
@@ -101,7 +99,6 @@ func parseDockerConfig(r io.Reader) (map[string]dockerConfig, error) {
 	}{}
 	if err := json.Unmarshal(byteData, &confsWrapper); err == nil {
 		if len(confsWrapper.Auths) > 0 {
-			log.Debug("here i am 1")
 			for name, auth := range confsWrapper.Auths {
 				auth.CredsStore = confsWrapper.CredsStore
 				confsWrapper.Auths[name] = auth
@@ -128,7 +125,6 @@ func loadCredentialsFromCredsStore(registryUrl string, config dockerConfig) (*do
 		return nil, err
 	}
 
-	log.Debug("loading raw response")
 	rawResponse := output.Bytes()
 
 	var credsResponse credentialHelperResponse
@@ -148,7 +144,6 @@ func authConfigs(confs map[string]dockerConfig) (*docker.AuthConfigurations, err
 		Configs: make(map[string]docker.AuthConfiguration),
 	}
 	for reg, conf := range confs {
-		log.Debugf("docker confs %+v", conf)
 		if conf.CredsStore != "" {
 			auth, err := loadCredentialsFromCredsStore(reg, conf)
 			if err != nil {
@@ -172,6 +167,5 @@ func authConfigs(confs map[string]dockerConfig) (*docker.AuthConfigurations, err
 			}
 		}
 	}
-	log.Debugf("AuthConfigs=%+v", c)
 	return c, nil
 }
