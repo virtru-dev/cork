@@ -109,7 +109,7 @@ func TryImagePull(client *docker.Client, image string) error {
 	log.Debugf("Trying to pull image: %s", image)
 	repo, tag := docker.ParseRepositoryTag(image)
 
-	auths, err := docker.NewAuthConfigurationsFromDockerCfg()
+	auths, err := NewAuthConfigurationsFromDockerCfg()
 	if err != nil {
 		log.Debugf("Cannot load docker config (this is not necessarily bad): %s", err.Error())
 	}
@@ -122,8 +122,8 @@ func TryImagePull(client *docker.Client, image string) error {
 	} else {
 		authConfigs = NarrowAuthSearch(repo, auths)
 		if len(authConfigs) == 0 {
-			authConfigs = []docker.AuthConfiguration{
-				docker.AuthConfiguration{},
+			for _, auth := range auths.Configs {
+				authConfigs = append(authConfigs, auth)
 			}
 		}
 	}
