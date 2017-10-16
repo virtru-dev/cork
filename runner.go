@@ -201,8 +201,47 @@ func (c *CorkTypeContainer) runClient(stageName string, clientErrChan chan error
 	}()
 }
 
+func (c *CorkTypeContainer) setupDockerCreds() error {
+	log.Debugf("Setting docker credentials for container")
+	configStr, err := dockerutils.ExportAuthConfigsFromDockerCfg()
+	if err != nil {
+		log.Debugf("Error loading docker credentials. Means you don't have any.")
+		return nil
+	}
+	failed := make(chan bool)
+
+	credentialSetupCommand := fmt.Sprintf("mkdir -p ~/.docker && echo '%s' > ~/.docker/config.json", configStr)
+	sshCommandOptions := DockerSSHCommandOptions{
+		Host:       "127.0.0.1",
+		Port:       c.SSHPort,
+		Command:    credentialSetupCommand,
+		Failed:     failed,
+		SSHKeyPath: c.SSHKeyPath,
+	}
+
+	command, err := NewDockerSSHCommand(sshCommandOptions)
+	if err != nil {
+		return err
+	}
+
+	log.Debugf("Running SSH with env %v", c.Env)
+	command.Start(c.Env)
+	defer command.CleanUp()
+
+	failedResponse := <-failed
+	if failedResponse {
+		return fmt.Errorf("Error occured setting docker credentials")
+	}
+	return nil
+}
+
 func (c *CorkTypeContainer) startSSHCommand(stageName string) error {
 	failed := make(chan bool)
+
+	err := c.setupDockerCreds()
+	if err != nil {
+		return err
+	}
 
 	log.Debugf("Connecting to docker container %s ssh on port %d", c.Commander.Container.ID, c.SSHPort)
 	debugFlag := ""

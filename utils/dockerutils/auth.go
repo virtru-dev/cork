@@ -169,3 +169,25 @@ func authConfigs(confs map[string]dockerConfig) (*docker.AuthConfigurations, err
 	}
 	return c, nil
 }
+
+func ExportAuthConfigsFromDockerCfg() (string, error) {
+	outputFormat := struct {
+		Auths map[string]dockerConfig `json:"auths"`
+	}{}
+	auths, err := NewAuthConfigurationsFromDockerCfg()
+
+	outputAuths := make(map[string]dockerConfig)
+	for _, auth := range auths.Configs {
+		usernamePasswordStr := fmt.Sprintf("%s:%s", auth.Username, auth.Password)
+
+		outputAuths[auth.ServerAddress] = dockerConfig{
+			Auth: base64.StdEncoding.EncodeToString([]byte(usernamePasswordStr)),
+		}
+	}
+	outputFormat.Auths = outputAuths
+	exportBytes, err := json.Marshal(outputFormat)
+	if err != nil {
+		return "", err
+	}
+	return string(exportBytes), nil
+}

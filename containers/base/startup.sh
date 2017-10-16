@@ -21,6 +21,8 @@ if [ -f ${CORK_HOST_HOME_DIR}/.ssh/known_hosts ]; then
     cp ${CORK_HOST_HOME_DIR}/.ssh/known_hosts /root/.ssh/known_hosts
 fi
 
+mkdir -p /root/.docker
+
 ssh-keyscan -t rsa github.com >> /root/.ssh/known_hosts
 
 /cork-server/cork-server save-env
