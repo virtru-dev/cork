@@ -11,9 +11,9 @@ import (
 	"strings"
 	"syscall"
 
-	log "github.com/sirupsen/logrus"
 	docker "github.com/fsouza/go-dockerclient"
 	"github.com/satori/go.uuid"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/fatih/color"
 	"gopkg.in/urfave/cli.v1"
@@ -73,6 +73,11 @@ func init() {
 			cli.StringSliceFlag{
 				Name:  "param, p",
 				Usage: `Set Paramater "param_name=param_value"`,
+			},
+			cli.StringFlag{
+				Name:   "override-cork-server",
+				Usage:  `Path to a directory containing a cork-server to use on the cork type server`,
+				EnvVar: "CORK_OVERRIDE_CORK_SERVER",
 			},
 		},
 	}
@@ -247,14 +252,15 @@ func executeCorkRun(c *cli.Context, corkDef *CorkDefinition, stageName string) e
 	}
 
 	options := CorkTypeContainerOptions{
-		ProjectName:           corkDef.Name,
-		CacheVolumeName:       metadata.CacheVolumeName(),
-		ImageName:             corkDef.Type,
-		Debug:                 c.GlobalBool("debug"),
-		ForcePullImage:        c.Bool("force-pull-image"),
-		SSHKeyPath:            c.String("ssh-key"),
-		Definition:            corkDef,
-		OutputDestinationPath: outputDestinationPath,
+		ProjectName:               corkDef.Name,
+		CacheVolumeName:           metadata.CacheVolumeName(),
+		ImageName:                 corkDef.Type,
+		Debug:                     c.GlobalBool("debug"),
+		ForcePullImage:            c.Bool("force-pull-image"),
+		SSHKeyPath:                c.String("ssh-key"),
+		Definition:                corkDef,
+		OutputDestinationPath:     outputDestinationPath,
+		OverrideCorkServerDirPath: c.String("override-cork-server"),
 	}
 
 	log.Debug("Initializing runner")

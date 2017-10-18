@@ -32,35 +32,37 @@ var serverCommandTemplate = "/cork-server/cork-server -e %s serve"
 
 // CorkTypeContainer - Runs a cork job in a container
 type CorkTypeContainer struct {
-	Name                  string
-	Image                 string
-	DockerClient          *docker.Client
-	Container             *docker.Container
-	DockerHostPath        string
-	Failed                chan bool
-	Control               *Control
-	SSHPort               int
-	CorkPort              int
-	CacheVolumeName       string
-	Env                   []string
-	ProjectName           string
-	ForcePullImage        bool
-	Debug                 bool
-	SSHKeyPath            string
-	Commander             *dockerutils.DockerCommander
-	Definition            *CorkDefinition
-	OutputDestinationPath string
+	Name                      string
+	Image                     string
+	DockerClient              *docker.Client
+	Container                 *docker.Container
+	DockerHostPath            string
+	Failed                    chan bool
+	Control                   *Control
+	SSHPort                   int
+	CorkPort                  int
+	CacheVolumeName           string
+	Env                       []string
+	ProjectName               string
+	ForcePullImage            bool
+	Debug                     bool
+	SSHKeyPath                string
+	Commander                 *dockerutils.DockerCommander
+	Definition                *CorkDefinition
+	OutputDestinationPath     string
+	OverrideCorkServerDirPath string
 }
 
 type CorkTypeContainerOptions struct {
-	Debug                 bool
-	ImageName             string
-	CacheVolumeName       string
-	ProjectName           string
-	ForcePullImage        bool
-	SSHKeyPath            string
-	Definition            *CorkDefinition
-	OutputDestinationPath string
+	Debug                     bool
+	ImageName                 string
+	CacheVolumeName           string
+	ProjectName               string
+	ForcePullImage            bool
+	SSHKeyPath                string
+	Definition                *CorkDefinition
+	OutputDestinationPath     string
+	OverrideCorkServerDirPath string
 }
 
 // Creates a new cork runner
@@ -83,18 +85,19 @@ func New(dockerClient *docker.Client, control *Control, options CorkTypeContaine
 	}
 
 	runner := CorkTypeContainer{
-		DockerClient:          dockerClient,
-		Image:                 options.ImageName,
-		Name:                  fmt.Sprintf("cork-%s", uuid.NewV4()),
-		DockerHostPath:        dockerHostPath,
-		CacheVolumeName:       options.CacheVolumeName,
-		Control:               control,
-		ProjectName:           options.ProjectName,
-		ForcePullImage:        options.ForcePullImage,
-		Debug:                 options.Debug,
-		SSHKeyPath:            options.SSHKeyPath,
-		Definition:            options.Definition,
-		OutputDestinationPath: options.OutputDestinationPath,
+		DockerClient:              dockerClient,
+		Image:                     options.ImageName,
+		Name:                      fmt.Sprintf("cork-%s", uuid.NewV4()),
+		DockerHostPath:            dockerHostPath,
+		CacheVolumeName:           options.CacheVolumeName,
+		Control:                   control,
+		ProjectName:               options.ProjectName,
+		ForcePullImage:            options.ForcePullImage,
+		Debug:                     options.Debug,
+		SSHKeyPath:                options.SSHKeyPath,
+		Definition:                options.Definition,
+		OutputDestinationPath:     options.OutputDestinationPath,
+		OverrideCorkServerDirPath: options.OverrideCorkServerDirPath,
 	}
 	return &runner, nil
 }
@@ -311,6 +314,16 @@ func (c *CorkTypeContainer) createCommander() (*dockerutils.DockerCommander, err
 		"CORK_HOST_HOME_DIR",
 	}
 
+	volumeBinds := []string{
+		fmt.Sprintf("%s:/var/run/docker.sock", c.DockerHostPath),
+		fmt.Sprintf("%s:/work", pwd),
+		fmt.Sprintf("%s:/host_home", homeDir),
+		fmt.Sprintf("%s:/cork-cache", c.CacheVolumeName),
+	}
+	if c.OverrideCorkServerDirPath != "" {
+		volumeBinds = append(volumeBinds, fmt.Sprintf("%s:/cork-server", c.OverrideCorkServerDirPath))
+	}
+
 	options := dockerutils.DockerCommanderOptions{
 		Image:          c.Image,
 		ForcePullImage: c.ForcePullImage,
@@ -327,12 +340,7 @@ func (c *CorkTypeContainer) createCommander() (*dockerutils.DockerCommander, err
 			22,
 			11900,
 		},
-		Binds: []string{
-			fmt.Sprintf("%s:/var/run/docker.sock", c.DockerHostPath),
-			fmt.Sprintf("%s:/work", pwd),
-			fmt.Sprintf("%s:/host_home", homeDir),
-			fmt.Sprintf("%s:/cork-cache", c.CacheVolumeName),
-		},
+		Binds:      volumeBinds,
 		Privileged: true,
 		AutoRemove: true,
 		Ports: []string{
