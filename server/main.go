@@ -11,7 +11,7 @@ import (
 
 	"google.golang.org/grpc"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	pb "github.com/virtru/cork/protocol"
 	"github.com/virtru/cork/server/definition"
 	"github.com/virtru/cork/server/environment"
@@ -243,6 +243,7 @@ func newServer(c *cli.Context) (*CorkTypeServer, error) {
 	}
 	serverDef, err := definition.LoadFromDir(corkDir)
 	if err != nil {
+		log.Debugf("Failed to load cork server definition: %+v", err)
 		return nil, err
 	}
 	server.ServerDefinition = serverDef
@@ -379,10 +380,12 @@ func cmdServe(c *cli.Context) error {
 
 	server, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
+		os.Exit(1)
 		return err
 	}
 	corkTypeServer, err := newServer(c)
 	if err != nil {
+		os.Exit(1)
 		return err
 	}
 	corkTypeServer.Initialize()
@@ -390,6 +393,10 @@ func cmdServe(c *cli.Context) error {
 	log.Debugf("Starting cork-server at %d", port)
 	grpcServer := grpc.NewServer()
 	pb.RegisterCorkTypeServiceServer(grpcServer, corkTypeServer)
-	grpcServer.Serve(server)
+	err = grpcServer.Serve(server)
+	if err != nil {
+		os.Exit(1)
+		return err
+	}
 	return nil
 }

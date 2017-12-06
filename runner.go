@@ -9,7 +9,7 @@ import (
 	"os"
 	"os/user"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/virtru/cork/client"
 	"google.golang.org/grpc"
@@ -28,39 +28,41 @@ import (
 
 type VolumeMap map[string]string
 
-var serverCommandTemplate = "/cork-server -e %s serve"
+var serverCommandTemplate = "/cork-server/cork-server -e %s serve"
 
 // CorkTypeContainer - Runs a cork job in a container
 type CorkTypeContainer struct {
-	Name                  string
-	Image                 string
-	DockerClient          *docker.Client
-	Container             *docker.Container
-	DockerHostPath        string
-	Failed                chan bool
-	Control               *Control
-	SSHPort               int
-	CorkPort              int
-	CacheVolumeName       string
-	Env                   []string
-	ProjectName           string
-	ForcePullImage        bool
-	Debug                 bool
-	SSHKeyPath            string
-	Commander             *dockerutils.DockerCommander
-	Definition            *CorkDefinition
-	OutputDestinationPath string
+	Name                      string
+	Image                     string
+	DockerClient              *docker.Client
+	Container                 *docker.Container
+	DockerHostPath            string
+	Failed                    chan bool
+	Control                   *Control
+	SSHPort                   int
+	CorkPort                  int
+	CacheVolumeName           string
+	Env                       []string
+	ProjectName               string
+	ForcePullImage            bool
+	Debug                     bool
+	SSHKeyPath                string
+	Commander                 *dockerutils.DockerCommander
+	Definition                *CorkDefinition
+	OutputDestinationPath     string
+	OverrideCorkServerDirPath string
 }
 
 type CorkTypeContainerOptions struct {
-	Debug                 bool
-	ImageName             string
-	CacheVolumeName       string
-	ProjectName           string
-	ForcePullImage        bool
-	SSHKeyPath            string
-	Definition            *CorkDefinition
-	OutputDestinationPath string
+	Debug                     bool
+	ImageName                 string
+	CacheVolumeName           string
+	ProjectName               string
+	ForcePullImage            bool
+	SSHKeyPath                string
+	Definition                *CorkDefinition
+	OutputDestinationPath     string
+	OverrideCorkServerDirPath string
 }
 
 // Creates a new cork runner
@@ -83,18 +85,19 @@ func New(dockerClient *docker.Client, control *Control, options CorkTypeContaine
 	}
 
 	runner := CorkTypeContainer{
-		DockerClient:          dockerClient,
-		Image:                 options.ImageName,
-		Name:                  fmt.Sprintf("cork-%s", uuid.NewV4()),
-		DockerHostPath:        dockerHostPath,
-		CacheVolumeName:       options.CacheVolumeName,
-		Control:               control,
-		ProjectName:           options.ProjectName,
-		ForcePullImage:        options.ForcePullImage,
-		Debug:                 options.Debug,
-		SSHKeyPath:            options.SSHKeyPath,
-		Definition:            options.Definition,
-		OutputDestinationPath: options.OutputDestinationPath,
+		DockerClient:              dockerClient,
+		Image:                     options.ImageName,
+		Name:                      fmt.Sprintf("cork-%s", uuid.NewV4()),
+		DockerHostPath:            dockerHostPath,
+		CacheVolumeName:           options.CacheVolumeName,
+		Control:                   control,
+		ProjectName:               options.ProjectName,
+		ForcePullImage:            options.ForcePullImage,
+		Debug:                     options.Debug,
+		SSHKeyPath:                options.SSHKeyPath,
+		Definition:                options.Definition,
+		OutputDestinationPath:     options.OutputDestinationPath,
+		OverrideCorkServerDirPath: options.OverrideCorkServerDirPath,
 	}
 	return &runner, nil
 }
@@ -201,8 +204,47 @@ func (c *CorkTypeContainer) runClient(stageName string, clientErrChan chan error
 	}()
 }
 
+func (c *CorkTypeContainer) setupDockerCreds() error {
+	log.Debugf("Setting docker credentials for container")
+	configStr, err := dockerutils.ExportAuthConfigsFromDockerCfg()
+	if err != nil {
+		log.Debugf("Error loading docker credentials. Means you don't have any.")
+		return nil
+	}
+	failed := make(chan bool)
+
+	credentialSetupCommand := fmt.Sprintf("mkdir -p ~/.docker && echo '%s' > ~/.docker/config.json", configStr)
+	sshCommandOptions := DockerSSHCommandOptions{
+		Host:       "127.0.0.1",
+		Port:       c.SSHPort,
+		Command:    credentialSetupCommand,
+		Failed:     failed,
+		SSHKeyPath: c.SSHKeyPath,
+	}
+
+	command, err := NewDockerSSHCommand(sshCommandOptions)
+	if err != nil {
+		return err
+	}
+
+	log.Debugf("Running SSH with env %v", c.Env)
+	command.Start(c.Env)
+	defer command.CleanUp()
+
+	failedResponse := <-failed
+	if failedResponse {
+		return fmt.Errorf("Error occured setting docker credentials")
+	}
+	return nil
+}
+
 func (c *CorkTypeContainer) startSSHCommand(stageName string) error {
 	failed := make(chan bool)
+
+	err := c.setupDockerCreds()
+	if err != nil {
+		return err
+	}
 
 	log.Debugf("Connecting to docker container %s ssh on port %d", c.Commander.Container.ID, c.SSHPort)
 	debugFlag := ""
@@ -217,6 +259,7 @@ func (c *CorkTypeContainer) startSSHCommand(stageName string) error {
 		Failed:     failed,
 		SSHKeyPath: c.SSHKeyPath,
 	}
+	log.Debugf("ssh command options: %+v", sshCommandOptions)
 	command, err := NewDockerSSHCommand(sshCommandOptions)
 	if err != nil {
 		return err
@@ -224,6 +267,7 @@ func (c *CorkTypeContainer) startSSHCommand(stageName string) error {
 
 	log.Debugf("Running SSH with env %v", c.Env)
 	command.Start(c.Env)
+	defer command.CleanUp()
 	clientErrChan := make(chan error)
 
 	c.runClient(stageName, clientErrChan)
@@ -248,6 +292,7 @@ func (c *CorkTypeContainer) Pwd() (string, error) {
 }
 
 func (c *CorkTypeContainer) createCommander() (*dockerutils.DockerCommander, error) {
+	log.Debugf("Starting docker commander")
 	pwd, err := c.Pwd()
 	if err != nil {
 		return nil, err
@@ -269,6 +314,16 @@ func (c *CorkTypeContainer) createCommander() (*dockerutils.DockerCommander, err
 		"CORK_HOST_HOME_DIR",
 	}
 
+	volumeBinds := []string{
+		fmt.Sprintf("%s:/var/run/docker.sock", c.DockerHostPath),
+		fmt.Sprintf("%s:/work", pwd),
+		fmt.Sprintf("%s:/host_home", homeDir),
+		fmt.Sprintf("%s:/cork-cache", c.CacheVolumeName),
+	}
+	if c.OverrideCorkServerDirPath != "" {
+		volumeBinds = append(volumeBinds, fmt.Sprintf("%s:/cork-server", c.OverrideCorkServerDirPath))
+	}
+
 	options := dockerutils.DockerCommanderOptions{
 		Image:          c.Image,
 		ForcePullImage: c.ForcePullImage,
@@ -285,12 +340,7 @@ func (c *CorkTypeContainer) createCommander() (*dockerutils.DockerCommander, err
 			22,
 			11900,
 		},
-		Binds: []string{
-			fmt.Sprintf("%s:/var/run/docker.sock", c.DockerHostPath),
-			fmt.Sprintf("%s:/work", pwd),
-			fmt.Sprintf("%s:/host_home", homeDir),
-			fmt.Sprintf("%s:/cork-cache", c.CacheVolumeName),
-		},
+		Binds:      volumeBinds,
 		Privileged: true,
 		AutoRemove: true,
 		Ports: []string{

@@ -12,7 +12,7 @@ import (
 
 	"io/ioutil"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"github.com/virtru/cork/server/definition"
 	"github.com/virtru/cork/server/streamer"
 )

@@ -1,9 +1,7 @@
 package executor
 
 import (
-	"fmt"
-
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	pb "github.com/virtru/cork/protocol"
 	"github.com/virtru/cork/server/definition"
 	"github.com/virtru/cork/server/streamer"
@@ -19,6 +17,7 @@ type ExportStepRunner struct {
 }
 
 func ExportStepRunnerFactory(params StepRunnerParams) (StepRunner, error) {
+	log.Debugf("Creating ExportStepRunner with %+v", params)
 	runner := &ExportStepRunner{}
 
 	err := runner.Initialize(params)
@@ -36,7 +35,7 @@ func (e *ExportStepRunner) Initialize(params StepRunnerParams) error {
 func (e *ExportStepRunner) Run() {
 	export := e.Params.Args.Export
 
-	fmt.Printf("E PARAMS: %+v\n", *e.Params.Args)
+	log.Debugf("Export params: %+v\n", *e.Params.Args)
 
 	exportEvent := pb.ExecuteOutputEvent{
 		Type: "export",
